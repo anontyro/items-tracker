@@ -10,6 +10,7 @@ export interface ScraperConfig {
   retryDelayMs: number;
   backendApiUrl: string;
   apiKey: string;
+  maxPages?: number; // optional; when undefined, scraper runs with no page limit
 }
 
 function requireEnv(name: string, defaultValue?: string): string {
@@ -20,6 +21,20 @@ function requireEnv(name: string, defaultValue?: string): string {
   return value;
 }
 
+function optionalPositiveIntEnv(name: string): number | undefined {
+  const raw = process.env[name];
+  if (!raw) {
+    return undefined;
+  }
+
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    return undefined;
+  }
+
+  return Math.floor(n);
+}
+
 export const config: ScraperConfig = {
   scrapeSchedule: requireEnv("SCRAPE_SCHEDULE", "0 0 * * *"),
   rateLimitDelayMs: Number(requireEnv("RATE_LIMIT_DELAY", "2000")),
@@ -27,4 +42,5 @@ export const config: ScraperConfig = {
   retryDelayMs: Number(requireEnv("RETRY_DELAY", "5000")),
   backendApiUrl: requireEnv("BACKEND_API_URL", "http://localhost:3001"),
   apiKey: requireEnv("API_KEY", "change-me"),
+  maxPages: optionalPositiveIntEnv("SCRAPER_MAX_PAGES"),
 };
