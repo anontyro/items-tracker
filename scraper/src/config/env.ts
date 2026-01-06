@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import path from "path";
 
 // Load environment variables from .env when running locally
 dotenv.config();
@@ -11,6 +12,7 @@ export interface ScraperConfig {
   backendApiUrl: string;
   apiKey: string;
   maxPages?: number; // optional; when undefined, scraper runs with no page limit
+  sqlitePath: string;
 }
 
 function requireEnv(name: string, defaultValue?: string): string {
@@ -43,4 +45,7 @@ export const config: ScraperConfig = {
   backendApiUrl: requireEnv("BACKEND_API_URL", "http://localhost:3001"),
   apiKey: requireEnv("API_KEY", "change-me"),
   maxPages: optionalPositiveIntEnv("SCRAPER_MAX_PAGES"),
+  sqlitePath:
+    process.env.SCRAPER_SQLITE_PATH ??
+    path.resolve(process.cwd(), "scraper-data.sqlite"),
 };

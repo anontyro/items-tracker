@@ -1,5 +1,8 @@
 packages:
-  - 'scraper'
-  - 'frontend'
-  - 'backend'
-  - 'packages/*'
+  - scraper
+  - frontend
+  - backend
+  - packages/*
+
+onlyBuiltDependencies:
+  - better-sqlite3

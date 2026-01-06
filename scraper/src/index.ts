@@ -2,6 +2,7 @@ import { getActiveSiteConfigs, loadSiteConfigs } from "./config/siteConfig";
 
 import { config } from "./config/env";
 import pino from "pino";
+import { saveScrapedProducts } from "./storage/sqlite";
 import { scrapeSiteWithPlaywright } from "./scraper/boardGameScraper";
 
 const logger = pino({
@@ -13,6 +14,10 @@ async function main() {
 
   const allSites = await loadSiteConfigs();
   const activeSites = getActiveSiteConfigs(allSites);
+
+  const disableSqlite =
+    process.env.SCRAPER_DISABLE_SQLITE === "1" ||
+    process.env.SCRAPER_DISABLE_SQLITE === "true";
 
   logger.info(
     {
@@ -29,11 +34,21 @@ async function main() {
       maxPages: config.maxPages,
     });
 
+    if (!disableSqlite) {
+      saveScrapedProducts(config.sqlitePath, products);
+    } else {
+      logger.info(
+        { siteId: site.siteId, count: products.length },
+        "SCRAPER_DISABLE_SQLITE is set; skipping SQLite persistence for site"
+      );
+    }
+
     logger.info(
       {
         siteId: site.siteId,
         productCount: products.length,
         sampleNames: products.slice(0, 5).map((p) => p.name),
+        sqlitePath: config.sqlitePath,
       },
       "Completed sample scrape for site"
     );

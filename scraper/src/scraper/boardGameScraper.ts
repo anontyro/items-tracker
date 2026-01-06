@@ -1,5 +1,7 @@
 import { SiteConfig } from "../config/siteConfig";
 import { chromium } from "playwright";
+import fs from "fs/promises";
+import path from "path";
 import pino from "pino";
 
 export interface ScrapedProduct {
@@ -35,8 +37,18 @@ export async function scrapeSiteWithPlaywright(
   logger: pino.Logger,
   options?: { maxPages?: number }
 ): Promise<ScrapedProduct[]> {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
+  const headlessEnv = process.env.PLAYWRIGHT_HEADLESS;
+  const headless =
+    headlessEnv === "false" || headlessEnv === "0" ? false : true;
+
+  const browser = await chromium.launch({ headless });
+
+  const userAgent =
+    process.env.PLAYWRIGHT_USER_AGENT ??
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+  const context = await browser.newContext({ userAgent });
+  const page = await context.newPage();
 
   const results: ScrapedProduct[] = [];
   const maxPages = options?.maxPages;
@@ -52,6 +64,32 @@ export async function scrapeSiteWithPlaywright(
       );
 
       await page.goto(nextUrl, { waitUntil: "networkidle" });
+
+      // Wait explicitly for the product list selector, in case content is loaded asynchronously
+      try {
+        await page.waitForSelector(siteConfig.selectors.productList, {
+          timeout: 10000,
+        });
+      } catch {
+        logger.warn(
+          { siteId: siteConfig.siteId, page: currentPage },
+          "Timed out waiting for productList selector; continuing to count anyway"
+        );
+      }
+
+      // Debug: dump first page HTML to disk so we can inspect real markup if selectors return 0
+      if (currentPage === 1) {
+        const html = await page.content();
+        const dumpPath = path.resolve(
+          process.cwd(),
+          `debug-${siteConfig.siteId}-page-${currentPage}.html`
+        );
+        await fs.writeFile(dumpPath, html, "utf8");
+        logger.info(
+          { siteId: siteConfig.siteId, page: currentPage, dumpPath },
+          "Wrote debug HTML dump for page"
+        );
+      }
 
       const productLocator = page.locator(siteConfig.selectors.productList);
       const productCount = await productLocator.count();
@@ -154,6 +192,8 @@ export async function scrapeSiteWithPlaywright(
       await page.waitForTimeout(siteConfig.rateLimitMs);
     }
   } finally {
+    await page.close();
+    await context.close();
     await browser.close();
   }
 
