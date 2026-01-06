@@ -6,7 +6,10 @@
   "scripts": {
     "dev:scraper": "pnpm --filter board-game-price-tracker-scraper dev",
     "build:scraper": "pnpm --filter board-game-price-tracker-scraper build",
-    "start:scraper": "pnpm --filter board-game-price-tracker-scraper start"
+    "start:scraper": "pnpm --filter board-game-price-tracker-scraper start",
+    "dev:backend": "pnpm --filter board-game-price-tracker-backend start:dev",
+    "build:backend": "pnpm --filter board-game-price-tracker-backend build",
+    "start:backend": "pnpm --filter board-game-price-tracker-backend start"
   },
   "workspaces": [
     "scraper",
