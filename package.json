@@ -1,0 +1,17 @@
+{
+  "name": "site-items-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "dev:scraper": "pnpm --filter board-game-price-tracker-scraper dev",
+    "build:scraper": "pnpm --filter board-game-price-tracker-scraper build",
+    "start:scraper": "pnpm --filter board-game-price-tracker-scraper start"
+  },
+  "workspaces": [
+    "scraper",
+    "frontend",
+    "backend",
+    "packages/*"
+  ]
+}

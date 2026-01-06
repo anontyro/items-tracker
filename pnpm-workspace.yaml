@@ -1,0 +1,5 @@
+packages:
+  - 'scraper'
+  - 'frontend'
+  - 'backend'
+  - 'packages/*'
