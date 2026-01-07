@@ -1,6 +1,7 @@
 # Product Requirements Document: Board Game Price Tracker
 
 ## Document Information
+
 - **Version**: 1.0 (MVP)
 - **Created**: January 6, 2026
 - **Target Completion**: Prototype/MVP
@@ -10,20 +11,25 @@
 ## 1. Executive Summary
 
 ### 1.1 Product Vision
+
 A comprehensive price and availability tracking system for board games that enables users to monitor historical pricing data, track inventory fluctuations, and receive notifications when items meet specified criteria. The system will scrape e-commerce sites regularly, store historical data, and provide rich visualizations of price trends over time.
 
 ### 1.2 Target Users
+
 - Primary: The product owner and board game enthusiasts
 - Secondary: Anyone interested in tracking product pricing and availability across e-commerce sites
 
 ### 1.3 Core Problem Statement
+
 Prices and availability of board games fluctuate significantly in the current market. Users lack visibility into historical pricing data and availability patterns, making it difficult to:
+
 - Determine optimal purchase timing
 - Understand when items will be restocked
 - Identify genuine deals versus normal price variations
 - Track multiple items across different retailers
 
 ### 1.4 Success Metrics
+
 - Successful daily scraping of target site with <5% failure rate
 - Complete historical price data visualization
 - User ability to track items and receive notifications
@@ -36,6 +42,7 @@ Prices and availability of board games fluctuate significantly in the current ma
 ### 2.1 Technology Stack
 
 #### Frontend
+
 - **Framework**: Next.js 16
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS (implied from modern Next.js stack)
@@ -44,6 +51,7 @@ Prices and availability of board games fluctuate significantly in the current ma
 - **Sparklines**: Recharts mini charts
 
 #### Backend
+
 - **Framework**: NestJS
 - **Language**: TypeScript
 - **API Version**: `/api/v1/*`
@@ -51,23 +59,27 @@ Prices and availability of board games fluctuate significantly in the current ma
 - **Queue System**: BullMQ (with Redis)
 
 #### Scraper Service
+
 - **Framework**: Separate microservice (Node.js/TypeScript)
 - **Scraping**: Playwright
 - **Scheduling**: Cron jobs + BullMQ queues
 - **Trigger**: Manual endpoint + scheduled tasks
 
 #### Databases
+
 - **Development**: SQLite (local development)
 - **Production**: PostgreSQL
 - **Cache/Queue**: Redis (for BullMQ)
 
 #### Infrastructure
+
 - **Containerization**: Docker + Docker Compose
 - **Development**: Local Docker Compose setup
 - **Production**: Docker Swarm (future)
 - **CI/CD**: GitHub Actions → Docker Hub → Docker Swarm deployment (future)
 
 #### Runtime
+
 - **Node.js**: v22 LTS (or v24 if compatible)
 
 ---
@@ -77,6 +89,7 @@ Prices and availability of board games fluctuate significantly in the current ma
 ### 3.1 Scraper Microservice
 
 #### 3.1.1 Responsibilities
+
 - Scrape target e-commerce sites on schedule
 - Extract product data (name, price, availability, RRP)
 - Normalize data into consistent format
@@ -85,6 +98,7 @@ Prices and availability of board games fluctuate significantly in the current ma
 - Log scraping operations
 
 #### 3.1.2 Configuration (Environment Variables)
+
 ```
 SCRAPE_SCHEDULE=0 0 * * *  # Daily at midnight (cron format)
 RATE_LIMIT_DELAY=2000      # Milliseconds between requests (default: 2000ms)
@@ -95,6 +109,7 @@ API_KEY=<secure_api_key>
 ```
 
 #### 3.1.3 Site Configuration Structure
+
 Site configurations stored in JSON config files:
 
 ```json
@@ -120,6 +135,7 @@ Site configurations stored in JSON config files:
 ```
 
 #### 3.1.4 Scraping Flow
+
 1. Load site configuration
 2. Navigate to list page using Playwright
 3. Extract product listings
@@ -138,6 +154,7 @@ Site configurations stored in JSON config files:
 9. Record scraping metadata (timestamp, success/failure, response times)
 
 #### 3.1.5 Error Handling
+
 - **Retry Logic**: 2 additional attempts with configurable delay
 - **Failure Logging**: Record failed scrapes in database via API
 - **Continuation**: Continue with remaining items after individual failures
@@ -148,6 +165,7 @@ Site configurations stored in JSON config files:
 ### 3.2 Backend API (NestJS)
 
 #### 3.2.1 Core Modules
+
 - **Products Module**: CRUD operations for products
 - **Price History Module**: Record and retrieve historical data
 - **Tracking Module**: User tracking preferences
@@ -158,6 +176,7 @@ Site configurations stored in JSON config files:
 #### 3.2.2 API Endpoints
 
 ##### Products API
+
 ```
 GET    /api/v1/products
   Query params:
@@ -186,6 +205,7 @@ GET    /api/v1/products/:id/history
 ```
 
 ##### Bulk Upload API (Scraper)
+
 ```
 POST   /api/v1/scraper/bulk-upload
   Headers:
@@ -215,6 +235,7 @@ POST   /api/v1/scraper/bulk-upload
 ```
 
 ##### Tracking API
+
 ```
 GET    /api/v1/tracking
   Response:
@@ -239,6 +260,7 @@ GET    /api/v1/tracking/alerts
 ```
 
 ##### Wishlist API (Post-MVP)
+
 ```
 GET    /api/v1/wishlists
 POST   /api/v1/wishlists
@@ -250,6 +272,7 @@ DELETE /api/v1/wishlists/:id/items/:productId
 ```
 
 ##### Scraper Management API
+
 ```
 POST   /api/v1/scraper/trigger
   Body:
@@ -267,6 +290,7 @@ GET    /api/v1/scraper/status/:jobId
 ```
 
 #### 3.2.3 Environment Variables
+
 ```
 # Database
 DATABASE_URL=postgresql://user:pass@localhost:5432/pricetracker
@@ -301,11 +325,11 @@ model Product {
   type          String    @default("board-game")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  
+
   priceHistory  PriceHistory[]
   tracking      ProductTracking[]
   wishlistItems WishlistItem[]
-  
+
   @@index([name])
   @@index([type])
 }
@@ -319,10 +343,10 @@ model ProductSource {
   additionalData  Json?     // Unstructured data
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  
+
   product         Product   @relation(fields: [productId], references: [id])
   priceHistory    PriceHistory[]
-  
+
   @@index([productId])
   @@index([sourceName])
 }
@@ -335,15 +359,15 @@ model PriceHistory {
   availability    Boolean?  // true, false, null for unknown
   rrp             Decimal?  @db.Decimal(10, 2)
   scrapedAt       DateTime  @default(now())
-  
+
   // Scraping metadata
   scrapeSuccess   Boolean   @default(true)
   scrapeJobId     String?
   responseTimeMs  Int?
-  
+
   product         Product       @relation(fields: [productId], references: [id])
   source          ProductSource @relation(fields: [sourceId], references: [id])
-  
+
   @@index([productId, scrapedAt])
   @@index([sourceId, scrapedAt])
   @@index([scrapedAt])
@@ -353,17 +377,17 @@ model ProductTracking {
   id              String    @id @default(uuid())
   productId       String
   userId          String?   // Null for MVP (localStorage), populated later
-  
+
   // Tracking conditions
   trackType       String    @default("general") // general, price_drop, back_in_stock
   priceThreshold  Decimal?  @db.Decimal(10, 2)
   priceDropPercent Decimal? @db.Decimal(5, 2)
-  
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  
+
   product         Product   @relation(fields: [productId], references: [id])
-  
+
   @@index([productId])
   @@index([userId])
 }
@@ -375,9 +399,9 @@ model Wishlist {
   description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  
+
   items       WishlistItem[]
-  
+
   @@index([userId])
 }
 
@@ -387,10 +411,10 @@ model WishlistItem {
   productId   String
   addedAt     DateTime  @default(now())
   notes       String?
-  
+
   wishlist    Wishlist  @relation(fields: [wishlistId], references: [id])
   product     Product   @relation(fields: [productId], references: [id])
-  
+
   @@unique([wishlistId, productId])
   @@index([wishlistId])
   @@index([productId])
@@ -406,13 +430,14 @@ model ScrapeLog {
   productsScraped Int       @default(0)
   errors          Json?
   createdAt       DateTime  @default(now())
-  
+
   @@index([siteId, createdAt])
   @@index([status])
 }
 ```
 
 #### 3.3.2 Data Validation Rules
+
 - `price`: Must be positive (> 0)
 - `availability`: Must be `true`, `false`, or `null`
 - `rrp`: Must be positive if present, otherwise `null`
@@ -436,6 +461,7 @@ model ScrapeLog {
 #### 3.4.2 Homepage Components
 
 **Tracked Items Section**
+
 - Display all tracked items with:
   - Product name and current price
   - Sparkline showing price trend
@@ -446,11 +472,13 @@ model ScrapeLog {
 
 **Custom View Lists** (Post-MVP)
 User can configure which lists to show:
+
 - Recently Price Dropped (top 10)
 - Newly In Stock (top 10)
 - Custom saved searches
 
 Each list item shows:
+
 - Product thumbnail (if available)
 - Name
 - Current price vs previous price
@@ -460,6 +488,7 @@ Each list item shows:
 #### 3.4.3 Product Search Page
 
 **Search & Filters**
+
 - Search bar (fuzzy search on product name)
 - Filters:
   - Price range slider (min-max)
@@ -468,6 +497,7 @@ Each list item shows:
   - Sort by: Price (asc/desc), Name (A-Z), Recently Added, Price Change %
 
 **Results Display**
+
 - Grid or list view of products
 - Each product card shows:
   - Name
@@ -477,12 +507,14 @@ Each list item shows:
   - Track button (heart icon or star)
 
 **Pagination**
+
 - Client-side or server-side pagination
 - Configurable items per page
 
 #### 3.4.4 Product Detail Page
 
 **Product Information**
+
 - Product name (h1)
 - Current price (large, prominent)
 - RRP (if available, showing savings)
@@ -493,6 +525,7 @@ Each list item shows:
 - Add to Wishlist button (Post-MVP)
 
 **Price History Chart**
+
 - Large, interactive line chart (Recharts)
 - Time range selector: 7 days | 30 days | 90 days | All time
 - Y-axis: Price
@@ -503,12 +536,14 @@ Each list item shows:
 - Hover tooltip showing exact price and date
 
 **Historical Data Table** (Optional enhancement)
+
 - Sortable table showing all historical records
 - Columns: Date, Price, Availability, RRP
 
 #### 3.4.5 Tracking Management Page (MVP)
 
 **Tracked Items List**
+
 - Table or card view of all tracked items
 - Each entry shows:
   - Product details
@@ -516,6 +551,7 @@ Each list item shows:
   - Edit/Remove buttons
 
 **Add New Tracking**
+
 - Search for product
 - Select tracking type:
   - General tracking (MVP)
@@ -548,6 +584,7 @@ Each list item shows:
 ```
 
 #### 3.4.7 State Management
+
 - React hooks (useState, useEffect, useContext)
 - Data fetching: SWR or React Query (recommended for caching)
 - Local storage sync on component mount/unmount
@@ -559,6 +596,7 @@ Each list item shows:
 ### 4.1 MVP Features (Must-Have)
 
 #### Scraper Service
+
 - ✅ Daily scraping of `https://www.board-game.co.uk/category/board-games/?show=200&page=1`
 - ✅ Playwright-based scraping with rate limiting
 - ✅ Configurable via environment variables
@@ -568,6 +606,7 @@ Each list item shows:
 - ✅ Error logging
 
 #### Backend API
+
 - ✅ Product CRUD operations
 - ✅ Price history recording (separate row per scrape)
 - ✅ Bulk upload endpoint for scraper
@@ -581,6 +620,7 @@ Each list item shows:
 - ✅ API versioning (`/api/v1/`)
 
 #### Frontend
+
 - ✅ Homepage with tracked items + sparklines
 - ✅ Product search with filters (price range, availability, name)
 - ✅ Product detail page with price history chart
@@ -591,6 +631,7 @@ Each list item shows:
 - ✅ Responsive design
 
 #### Infrastructure
+
 - ✅ Docker Compose setup (Next, Nest, PostgreSQL, Redis)
 - ✅ Development and production configurations
 - ✅ README with setup instructions
@@ -598,6 +639,7 @@ Each list item shows:
 ### 4.2 Post-MVP Features (Nice-to-Have)
 
 #### Phase 2: Enhanced Tracking
+
 - ⏭️ Advanced tracking conditions:
   - Price drops below threshold
   - Back in stock notifications
@@ -607,18 +649,21 @@ Each list item shows:
   - Single webhook for all users initially
 
 #### Phase 3: Wishlist & Organization
+
 - ⏭️ Wishlist CRUD operations
 - ⏭️ Add tracked items to wishlists
 - ⏭️ Multiple wishlists per user
 - ⏭️ Wishlist sharing (future)
 
 #### Phase 4: Custom Views
+
 - ⏭️ Recently price-dropped products list
 - ⏭️ Newly in-stock products list
 - ⏭️ User-configurable homepage views
 - ⏭️ Saved custom search filters
 
 #### Phase 5: Authentication & Multi-User
+
 - ⏭️ OAuth integration (NextAuth)
 - ⏭️ Google OAuth provider
 - ⏭️ User accounts and profiles
@@ -626,12 +671,14 @@ Each list item shows:
 - ⏭️ Per-user Discord webhooks
 
 #### Phase 6: Multi-Site Support
+
 - ⏭️ Additional board game retailers
 - ⏭️ Site configuration management
 - ⏭️ Cross-site product matching
 - ⏭️ Unified product entities across sources
 
 #### Phase 7: Deployment
+
 - ⏭️ GitHub Actions CI/CD pipeline
 - ⏭️ Automated testing in pipeline
 - ⏭️ Docker image building and push to Docker Hub
@@ -643,12 +690,14 @@ Each list item shows:
 ## 5. Testing Strategy
 
 ### 5.1 Testing Framework
+
 - **Framework**: Jest
 - **Coverage Target**: >70% for critical paths
 
 ### 5.2 Test Types
 
 #### Unit Tests
+
 - **Backend**:
   - Service layer business logic
   - Data transformation functions
@@ -660,11 +709,13 @@ Each list item shows:
   - Data formatting helpers
 
 #### Integration Tests
+
 - API endpoint testing
 - Database operations
 - Scraper data flow (mock Playwright)
 
 #### E2E Tests (Future)
+
 - Critical user flows
 - Scraping to display pipeline
 
@@ -675,11 +726,13 @@ Each list item shows:
 ### 6.1 Local Development Setup
 
 #### Prerequisites
+
 - Node.js v22 LTS (or v24 if compatible)
 - Docker & Docker Compose
 - Git
 
 #### Environment Files
+
 ```
 # .env.development
 DATABASE_URL=file:./dev.db
@@ -699,6 +752,7 @@ RATE_LIMIT_DELAY=2000
 ```
 
 #### Docker Compose Services
+
 ```yaml
 services:
   frontend:
@@ -707,7 +761,7 @@ services:
       - "3000:3000"
     depends_on:
       - backend
-    
+
   backend:
     build: ./backend
     ports:
@@ -715,20 +769,20 @@ services:
     depends_on:
       - postgres
       - redis
-    
+
   scraper:
     build: ./scraper
     depends_on:
       - backend
       - redis
-    
+
   postgres:
     image: postgres:16-alpine
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    
+
   redis:
     image: redis:7-alpine
     ports:
@@ -741,6 +795,7 @@ volumes:
 ### 6.2 Production Deployment (Future)
 
 #### CI/CD Pipeline (GitHub Actions)
+
 1. Trigger on push to `main` branch
 2. Run linting and type checking
 3. Run unit tests
@@ -750,6 +805,7 @@ volumes:
 7. Run smoke tests
 
 #### Docker Swarm Configuration
+
 - Multi-node cluster
 - Service replication
 - Load balancing
@@ -761,6 +817,7 @@ volumes:
 ## 7. Data Flow Diagrams
 
 ### 7.1 Scraping Flow
+
 ```
 [Cron Schedule] → [BullMQ Queue] → [Scraper Service]
                                           ↓
@@ -780,6 +837,7 @@ volumes:
 ```
 
 ### 7.2 User Tracking Flow
+
 ```
 [User clicks "Track"] → [Frontend localStorage update]
                                    ↓
@@ -801,24 +859,28 @@ volumes:
 ## 8. Non-Functional Requirements
 
 ### 8.1 Performance
+
 - API response time: <500ms for list queries, <1s for detail queries
 - Scraping: Complete full site scrape in <30 minutes
 - Frontend: First contentful paint <2s
 - Chart rendering: Smooth for datasets up to 365 data points
 
 ### 8.2 Scalability
+
 - Support for 10,000+ products initially
 - Efficient pagination for large result sets
 - Database indexing on frequently queried fields
 - Potential for horizontal scaling via Docker Swarm
 
 ### 8.3 Reliability
+
 - Scraper uptime: 95%+
 - Database backups: Daily (production)
 - Error recovery: Automatic retries with exponential backoff
 - Graceful degradation when external sites are unavailable
 
 ### 8.4 Security
+
 - API key authentication for scraper endpoints
 - Rate limiting on public APIs (future)
 - HTTPS in production
@@ -826,6 +888,7 @@ volumes:
 - XSS protection via React's default escaping
 
 ### 8.5 Maintainability
+
 - TypeScript for type safety
 - Clear module boundaries
 - Comprehensive README documentation
@@ -837,6 +900,7 @@ volumes:
 ## 9. Success Criteria
 
 ### 9.1 MVP Launch Criteria
+
 - [ ] Successful daily scraping of board-game.co.uk with <5% error rate
 - [ ] Complete historical data storage for all products
 - [ ] Functional search and filter on frontend
@@ -849,6 +913,7 @@ volumes:
 - [ ] Basic unit test coverage (>50%) for critical paths
 
 ### 9.2 Post-MVP Milestones
+
 - Phase 2: Discord notifications working for price drops
 - Phase 3: Wishlist management functional
 - Phase 4: Custom views and saved searches operational
@@ -861,6 +926,7 @@ volumes:
 ## 10. Open Questions & Future Considerations
 
 ### 10.1 To Be Determined
+
 - Exact scraping schedule optimization based on site update patterns
 - Data retention policy (how long to keep historical data)
 - Rate limiting strategy for production API
@@ -868,6 +934,7 @@ volumes:
 - Analytics tracking (user behavior, popular products)
 
 ### 10.2 Future Enhancements
+
 - Mobile app (React Native)
 - Price prediction using ML models
 - Price drop alerts via email/SMS
@@ -875,6 +942,8 @@ volumes:
 - Public API for third-party integrations
 - Community features (shared wishlists, reviews)
 - Multi-currency support for international retailers
+- BoardGameGeek (BGG) catalog import and product enrichment (canonical game IDs)
+- Basic admin console for catalog editing and data quality (single-admin access)
 
 ---
 
@@ -883,12 +952,14 @@ volumes:
 ### 11.1 Technology Justifications
 
 **Why Next.js?**
+
 - Server-side rendering for better SEO
 - Excellent developer experience
 - Built-in API routes (if needed)
 - Strong ecosystem and community
 
 **Why NestJS?**
+
 - TypeScript-first framework
 - Modular architecture
 - Excellent for microservices
@@ -896,24 +967,28 @@ volumes:
 - Strong testing support
 
 **Why Prisma?**
+
 - Type-safe database queries
 - Excellent TypeScript integration
 - Easy migrations
 - Multi-database support (SQLite + PostgreSQL)
 
 **Why Playwright?**
+
 - Modern, fast, and reliable
 - Better handling of dynamic content than Cheerio
 - Built-in retry and wait mechanisms
 - Cross-browser support
 
 **Why BullMQ?**
+
 - Robust job queue system
 - Redis-backed for reliability
 - Job retry and failure handling
 - Dashboard for monitoring
 
 **Why Recharts?**
+
 - React-native, no D3 wrapper complexity
 - Wide adoption and active maintenance
 - Responsive and customizable
@@ -922,6 +997,7 @@ volumes:
 ### 11.2 Key Dependencies
 
 **Frontend**
+
 ```json
 {
   "next": "^16.0.0",
@@ -933,6 +1009,7 @@ volumes:
 ```
 
 **Backend**
+
 ```json
 {
   "@nestjs/core": "^10.0.0",
@@ -943,6 +1020,7 @@ volumes:
 ```
 
 **Scraper**
+
 ```json
 {
   "playwright": "^1.48.0",
@@ -952,6 +1030,7 @@ volumes:
 ```
 
 ### 11.3 Glossary
+
 - **RRP**: Recommended Retail Price (MSRP in US)
 - **Sparkline**: Small inline chart showing trend without axes
 - **Scrape**: Automated extraction of data from websites
