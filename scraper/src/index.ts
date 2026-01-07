@@ -48,14 +48,18 @@ async function main() {
 
       const normalized = normalizeRowsForSite(site, latestRows);
 
-      await sendPriceSnapshotsBatch({
+      const ingestSummary = await sendPriceSnapshotsBatch({
         apiBaseUrl: config.backendApiUrl,
         apiKey: config.apiKey,
         normalized,
       });
 
       logger.info(
-        { siteId: site.siteId, normalizedCount: normalized.length },
+        {
+          siteId: site.siteId,
+          normalizedCount: normalized.length,
+          ingestSummary,
+        },
         "Pushed normalized price snapshots to backend API"
       );
     } else {

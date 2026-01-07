@@ -27,6 +27,50 @@ export interface PriceSnapshotBatchPayload {
   snapshots: PriceSnapshotPayload[];
 }
 
+export interface BackendBatchResponse {
+  accepted: number;
+  failed: number;
+  newProducts?: number;
+  newSources?: number;
+  updatedSources?: number;
+  totalSnapshots?: number;
+}
+
+export interface BackendIngestSummary {
+  totalSnapshots: number;
+  accepted: number;
+  failed: number;
+  newProducts: number;
+  newSources: number;
+  updatedSources: number;
+}
+
+function getBackendBatchSize(): number {
+  const fallback = 50;
+  const raw = process.env.SCRAPER_BACKEND_BATCH_SIZE;
+
+  if (!raw) {
+    return fallback;
+  }
+
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    return fallback;
+  }
+
+  return Math.floor(n);
+}
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+
+  return chunks;
+}
+
 function toPriceSnapshotPayload(
   normalized: NormalizedPriceHistoryInput
 ): PriceSnapshotPayload {
@@ -62,26 +106,69 @@ export async function sendPriceSnapshotsBatch(options: {
   apiBaseUrl: string;
   apiKey: string;
   normalized: NormalizedPriceHistoryInput[];
-}): Promise<void> {
+}): Promise<BackendIngestSummary> {
   const { apiBaseUrl, apiKey, normalized } = options;
 
   if (!normalized.length) {
-    return;
+    return {
+      totalSnapshots: 0,
+      accepted: 0,
+      failed: 0,
+      newProducts: 0,
+      newSources: 0,
+      updatedSources: 0,
+    };
   }
+
+  const url = `${apiBaseUrl.replace(/\/$/, "")}/v1/price-history/batch`;
 
   const snapshots: PriceSnapshotPayload[] = normalized.map((n) =>
     toPriceSnapshotPayload(n)
   );
 
-  const payload: PriceSnapshotBatchPayload = { snapshots };
+  const batchSize = getBackendBatchSize();
+  const batches = chunkArray(snapshots, batchSize);
 
-  const url = `${apiBaseUrl.replace(/\/$/, "")}/v1/price-history/batch`;
+  let totalSnapshots = 0;
+  let accepted = 0;
+  let failed = 0;
+  let newProducts = 0;
+  let newSources = 0;
+  let updatedSources = 0;
 
-  await axios.post(url, payload, {
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-    },
-    timeout: 10000,
-  });
+  for (const batch of batches) {
+    const payload: PriceSnapshotBatchPayload = { snapshots: batch };
+
+    const response = await axios.post(url, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      timeout: 10000,
+    });
+
+    const data = response.data as BackendBatchResponse;
+
+    const batchTotal =
+      typeof data.totalSnapshots === "number"
+        ? data.totalSnapshots
+        : batch.length;
+
+    totalSnapshots += batchTotal;
+    accepted += typeof data.accepted === "number" ? data.accepted : batchTotal;
+    failed += typeof data.failed === "number" ? data.failed : 0;
+    newProducts += typeof data.newProducts === "number" ? data.newProducts : 0;
+    newSources += typeof data.newSources === "number" ? data.newSources : 0;
+    updatedSources +=
+      typeof data.updatedSources === "number" ? data.updatedSources : 0;
+  }
+
+  return {
+    totalSnapshots,
+    accepted,
+    failed,
+    newProducts,
+    newSources,
+    updatedSources,
+  };
 }
