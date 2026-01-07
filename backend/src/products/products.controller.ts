@@ -3,6 +3,8 @@ import {
   Get,
   Headers,
   Logger,
+  NotFoundException,
+  Param,
   Query,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -15,6 +17,13 @@ export class ProductsController {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  private assertApiKey(apiKey: string | undefined): void {
+    const expectedKey = process.env.FRONTEND_API_KEY;
+    if (!expectedKey || apiKey !== expectedKey) {
+      throw new UnauthorizedException("Invalid API key");
+    }
+  }
+
   @Get()
   async searchProducts(
     @Headers("x-api-key") apiKey: string | undefined,
@@ -22,10 +31,7 @@ export class ProductsController {
     @Query("limit") limitRaw?: string,
     @Query("offset") offsetRaw?: string
   ) {
-    const expectedKey = process.env.FRONTEND_API_KEY;
-    if (!expectedKey || apiKey !== expectedKey) {
-      throw new UnauthorizedException("Invalid API key");
-    }
+    this.assertApiKey(apiKey);
 
     const limit = Math.min(Math.max(Number(limitRaw) || 50, 1), 200);
     const offset = Math.max(Number(offsetRaw) || 0, 0);
@@ -55,5 +61,47 @@ export class ProductsController {
       items,
       total,
     };
+  }
+
+  @Get(":id")
+  async getProductById(
+    @Headers("x-api-key") apiKey: string | undefined,
+    @Param("id") id: string
+  ) {
+    this.assertApiKey(apiKey);
+
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        sources: {
+          orderBy: { sourceName: "asc" },
+        },
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException("Product not found");
+    }
+
+    return product;
+  }
+
+  @Get(":id/history")
+  async getProductHistory(
+    @Headers("x-api-key") apiKey: string | undefined,
+    @Param("id") id: string,
+    @Query("limit") limitRaw?: string
+  ) {
+    this.assertApiKey(apiKey);
+
+    const limit = Math.min(Math.max(Number(limitRaw) || 365, 1), 365);
+
+    const items = await this.prisma.priceHistory.findMany({
+      where: { productId: id },
+      orderBy: { scrapedAt: "desc" },
+      take: limit,
+    });
+
+    return { items };
   }
 }
