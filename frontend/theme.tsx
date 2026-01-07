@@ -1,8 +1,10 @@
 "use client";
 
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 const theme = createTheme({
   palette: {
@@ -30,10 +32,14 @@ const theme = createTheme({
 });
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      {children}
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
