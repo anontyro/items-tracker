@@ -5,7 +5,7 @@ import { NestFactory } from "@nestjs/core";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const port = process.env.API_PORT ? Number(process.env.API_PORT) : 3001;
+  const port = process.env.API_PORT ? Number(process.env.API_PORT) : 3005;
   await app.listen(port);
   // eslint-disable-next-line no-console
   console.log(`Backend API listening on http://localhost:${port}`);

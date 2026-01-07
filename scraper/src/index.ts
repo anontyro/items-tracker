@@ -1,9 +1,15 @@
+import {
+  RawScrapedProductRow,
+  getLatestScrapedProductsForSite,
+  saveScrapedProducts,
+} from "./storage/sqlite";
 import { getActiveSiteConfigs, loadSiteConfigs } from "./config/siteConfig";
 
 import { config } from "./config/env";
+import { normalizeRowsForSite } from "./normalization/normalize";
 import pino from "pino";
-import { saveScrapedProducts } from "./storage/sqlite";
 import { scrapeSiteWithPlaywright } from "./scraper/boardGameScraper";
+import { sendPriceSnapshotsBatch } from "./client/backendApi";
 
 const logger = pino({
   level: process.env.LOG_LEVEL ?? "info",
@@ -36,6 +42,22 @@ async function main() {
 
     if (!disableSqlite) {
       saveScrapedProducts(config.sqlitePath, products);
+
+      const latestRows: RawScrapedProductRow[] =
+        getLatestScrapedProductsForSite(config.sqlitePath, site.siteId);
+
+      const normalized = normalizeRowsForSite(site, latestRows);
+
+      await sendPriceSnapshotsBatch({
+        apiBaseUrl: config.backendApiUrl,
+        apiKey: config.apiKey,
+        normalized,
+      });
+
+      logger.info(
+        { siteId: site.siteId, normalizedCount: normalized.length },
+        "Pushed normalized price snapshots to backend API"
+      );
     } else {
       logger.info(
         { siteId: site.siteId, count: products.length },
