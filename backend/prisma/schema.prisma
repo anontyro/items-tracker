@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id            String          @id @default(uuid())
+  name          String
+  type          String          @default("board-game")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  priceHistory  PriceHistory[]
+  tracking      ProductTracking[]
+  wishlistItems WishlistItem[]
+  sources       ProductSource[]
+
+  @@index([name])
+  @@index([type])
+}
+
+model ProductSource {
+  id             String         @id @default(uuid())
+  productId      String
+  sourceName     String         // "Board Game Co UK"
+  sourceUrl      String         @unique
+  sku            String?
+  additionalData Json?          // Unstructured data
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  product        Product        @relation(fields: [productId], references: [id])
+  priceHistory   PriceHistory[]
+
+  @@index([productId])
+  @@index([sourceName])
+}
+
+model PriceHistory {
+  id             String    @id @default(uuid())
+  productId      String
+  sourceId       String
+  price          Decimal   @db.Decimal(10, 2)
+  availability   Boolean?  // true, false, null for unknown
+  rrp            Decimal?  @db.Decimal(10, 2)
+  scrapedAt      DateTime  @default(now())
+
+  // Scraping metadata
+  scrapeSuccess  Boolean   @default(true)
+  scrapeJobId    String?
+  responseTimeMs Int?
+
+  product        Product       @relation(fields: [productId], references: [id])
+  source         ProductSource @relation(fields: [sourceId], references: [id])
+
+  @@index([productId, scrapedAt])
+  @@index([sourceId, scrapedAt])
+  @@index([scrapedAt])
+}
+
+model ProductTracking {
+  id               String   @id @default(uuid())
+  productId        String
+  userId           String?  // Null for MVP (localStorage), populated later
+
+  // Tracking conditions
+  trackType        String   @default("general") // general, price_drop, back_in_stock
+  priceThreshold   Decimal? @db.Decimal(10, 2)
+  priceDropPercent Decimal? @db.Decimal(5, 2)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  product          Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+}
