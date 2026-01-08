@@ -1,5 +1,6 @@
+import { Page, chromium } from "playwright";
+
 import { SiteConfig } from "../config/siteConfig";
-import { chromium } from "playwright";
 import fs from "fs/promises";
 import path from "path";
 import pino from "pino";
@@ -30,6 +31,57 @@ function parseNumber(value: string | null | undefined): number | null {
 
   const parsed = Number(match[1]);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+async function gotoWithRetry(
+  page: Page,
+  url: string,
+  logger: pino.Logger,
+  meta: { siteId: string; page: number },
+  options?: { maxAttempts?: number; baseDelayMs?: number }
+): Promise<void> {
+  const maxAttempts = options?.maxAttempts ?? 3;
+  const baseDelayMs = options?.baseDelayMs ?? 5_000;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await page.goto(url, { waitUntil: "networkidle" });
+      return;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Unknown navigation error";
+
+      if (attempt >= maxAttempts) {
+        logger.error(
+          {
+            siteId: meta.siteId,
+            page: meta.page,
+            url,
+            attempt,
+            maxAttempts,
+            err: errorMessage,
+          },
+          "Failed to navigate after maximum attempts; giving up on further pages"
+        );
+        throw err;
+      }
+
+      logger.warn(
+        {
+          siteId: meta.siteId,
+          page: meta.page,
+          url,
+          attempt,
+          maxAttempts,
+          err: errorMessage,
+        },
+        "Navigation failed; will retry after backoff"
+      );
+
+      const backoffMs = baseDelayMs * Math.pow(2, attempt - 1);
+      await page.waitForTimeout(backoffMs);
+    }
+  }
 }
 
 export async function scrapeSiteWithPlaywright(
@@ -63,7 +115,16 @@ export async function scrapeSiteWithPlaywright(
         "Scraping product list page"
       );
 
-      await page.goto(nextUrl, { waitUntil: "networkidle" });
+      try {
+        await gotoWithRetry(page, nextUrl, logger, {
+          siteId: siteConfig.siteId,
+          page: currentPage,
+        });
+      } catch {
+        // If navigation keeps failing even after retries, stop pagination but
+        // return any products that were successfully scraped from previous pages.
+        break;
+      }
 
       // Wait explicitly for the product list selector, in case content is loaded asynchronously
       try {
