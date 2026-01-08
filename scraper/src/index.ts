@@ -1,6 +1,9 @@
 import {
   RawScrapedProductRow,
+  enqueuePriceHistoryBatch,
   getLatestScrapedProductsForSite,
+  markQueueItemFailed,
+  markQueueItemSent,
   saveScrapedProducts,
 } from "./storage/sqlite";
 import { getActiveSiteConfigs, loadSiteConfigs } from "./config/siteConfig";
@@ -14,6 +17,14 @@ import { sendPriceSnapshotsBatch } from "./client/backendApi";
 const logger = pino({
   level: process.env.LOG_LEVEL ?? "info",
 });
+
+function computeNextAttemptIso(currentAttempts: number): string {
+  const baseDelayMs = 30_000; // 30s
+  const maxDelayMs = 60 * 60 * 1000; // 1h
+  const attempt = Math.max(currentAttempts, 0) + 1;
+  const delay = Math.min(baseDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+  return new Date(Date.now() + delay).toISOString();
+}
 
 async function main() {
   logger.info({ config }, "Scraper service starting");
@@ -48,20 +59,64 @@ async function main() {
 
       const normalized = normalizeRowsForSite(site, latestRows);
 
-      const ingestSummary = await sendPriceSnapshotsBatch({
-        apiBaseUrl: config.backendApiUrl,
-        apiKey: config.apiKey,
-        normalized,
+      const queuePayload = { normalized };
+
+      const runId = `${site.siteId}-${new Date().toISOString()}`;
+
+      const queueId = enqueuePriceHistoryBatch(config.sqlitePath, {
+        runId,
+        siteId: site.siteId,
+        payloadJson: JSON.stringify(queuePayload),
       });
 
       logger.info(
         {
           siteId: site.siteId,
+          runId,
+          queueId,
           normalizedCount: normalized.length,
-          ingestSummary,
         },
-        "Pushed normalized price snapshots to backend API"
+        "Enqueued normalized price snapshots for backend sync"
       );
+
+      try {
+        const ingestSummary = await sendPriceSnapshotsBatch({
+          apiBaseUrl: config.backendApiUrl,
+          apiKey: config.apiKey,
+          normalized,
+        });
+
+        markQueueItemSent(config.sqlitePath, queueId);
+
+        logger.info(
+          {
+            siteId: site.siteId,
+            runId,
+            queueId,
+            normalizedCount: normalized.length,
+            ingestSummary,
+          },
+          "Pushed normalized price snapshots to backend API"
+        );
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Unknown error while sending batch";
+        const nextAttemptAtIso = computeNextAttemptIso(0);
+
+        markQueueItemFailed(
+          config.sqlitePath,
+          queueId,
+          message,
+          nextAttemptAtIso
+        );
+
+        logger.error(
+          { siteId: site.siteId, runId, queueId, err: message },
+          "Failed to push normalized price snapshots to backend API; will retry via queue"
+        );
+      }
     } else {
       logger.info(
         { siteId: site.siteId, count: products.length },

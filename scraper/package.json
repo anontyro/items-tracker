@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "sync-worker": "ts-node-dev --respawn --transpile-only src/workers/priceHistorySyncWorker.ts",
+    "sync-pending": "ts-node-dev --respawn --transpile-only src/tools/syncPendingRuns.ts"
   },
   "dependencies": {
     "axios": "^1.13.2",
