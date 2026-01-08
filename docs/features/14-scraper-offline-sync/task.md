@@ -12,90 +12,83 @@ The goal is:
 
 ## Implementation Plan
 
-1. [ ] **Define SQLite outbox/queue table in scraper database**
+1. [x] **Define SQLite outbox/queue table in scraper database**
 
-   - [ ] Add a new table in the scraper's SQLite schema, e.g. `price_history_sync_queue` (name can be adjusted to match existing conventions):
-     - [ ] `id` (integer primary key, autoincrement).
-     - [ ] `run_id` (foreign key / reference to the scraper's run or batch identifier).
-     - [ ] `payload` (JSON blob containing the exact body to POST to `/v1/price-history/batch`, or enough information to reconstruct it from other tables).
-     - [ ] `status` (text; enum values such as `pending`, `sending`, `sent`, `failed`).
-     - [ ] `attempts` (integer; number of delivery attempts so far).
-     - [ ] `next_attempt_at` (datetime; when this row becomes eligible for the next retry, for basic backoff).
-     - [ ] `last_error` (text; optional diagnostic string from the last failure).
-     - [ ] `created_at` / `updated_at` (datetimes managed by the scraper).
-   - [ ] Ensure there is an index on `status` and `next_attempt_at` to support efficient selection of pending items.
-   - [ ] Keep this table **strictly about API delivery**, so it remains independent of scraper internals apart from `run_id` (and/or payload).
+   - [x] Added a new table in the scraper's SQLite schema, `price_history_sync_queue`:
+     - [x] `id` (integer primary key, autoincrement).
+     - [x] `run_id` (string identifier for the scrape run/batch).
+     - [x] `site_id` (site identifier to aid debugging and filtering).
+     - [x] `payload_json` (JSON blob containing the exact body currently sent to `/v1/price-history/batch`, i.e. `{ normalized: NormalizedPriceHistoryInput[] }`).
+     - [x] `status` (text; enum values `pending`, `sending`, `sent`, `failed`).
+     - [x] `attempts` (integer; number of delivery attempts so far).
+     - [x] `next_attempt_at` (datetime; when this row becomes eligible for the next retry, for basic backoff).
+     - [x] `last_error` (text; optional diagnostic string from the last failure).
+     - [x] `target_env` (optional text; reserved for future per-row environment targeting).
+     - [x] `created_at` / `updated_at` (datetimes managed by the scraper).
+   - [x] Ensured there are indexes on `status` + `next_attempt_at`, and on `run_id`, to support efficient selection of pending items.
+   - [x] Kept this table **strictly about API delivery**, independent from the raw scrape storage table.
 
-2. [ ] **Update scraper write path to always enqueue outbox entries**
+2. [x] **Update scraper write path to always enqueue outbox entries**
 
-   - [ ] Identify the point in the scraper where a run completes and price history snapshots are currently written to SQLite.
-   - [ ] Wrap the following steps in a SQLite transaction:
-     - [ ] Insert/update the scraped run metadata (run table, if present).
-     - [ ] Insert the individual price snapshots into their local tables.
-     - [ ] Insert a row into `price_history_sync_queue` with:
-       - [ ] `run_id` for traceability.
-       - [ ] `payload` representing the batch body that should be sent to the backend API (`/v1/price-history/batch`). This can either:
-         - [ ] Store **the full JSON body** (denormalized); or
-         - [ ] Store just `run_id` and reconstruct the batch from the run and snapshot tables in the sync worker.
-       - [ ] `status = 'pending'`.
-       - [ ] `attempts = 0`, `next_attempt_at = NOW()`, `last_error = NULL`.
-   - [ ] Commit the transaction.
-   - [ ] Do **not** make the online API call part of this transaction; the DB write must succeed regardless of API state.
+   - [x] Identified the point in the scraper where a run completes: after scraping, saving raw products to SQLite, and normalizing rows for a site.
+   - [x] For each site scrape, the scraper now:
+     - [x] Saves raw products into `scraped_products_raw`.
+     - [x] Loads the latest rows for the site and normalizes them to `NormalizedPriceHistoryInput[]`.
+     - [x] Inserts a row into `price_history_sync_queue` with:
+       - [x] `run_id` (synthetic ID derived from `siteId` + timestamp) for traceability.
+       - [x] `payload_json` containing `{ normalized }` for direct replay.
+       - [x] `status = 'pending'`, `attempts = 0`, `next_attempt_at = NOW()`, `last_error = NULL`.
+   - [ ] Future improvement: wrap the SQLite writes and queue insert in a single transaction so that they succeed or fail together.
+   - [x] The online API call is **not** part of these writes; the DB state is updated even if the backend is unreachable.
 
-3. [ ] **Implement background sync worker to drain the outbox**
+3. [x] **Implement background sync worker to drain the outbox**
 
-   - [ ] Create a small worker module/CLI in the scraper project, e.g. `src/workers/priceHistorySyncWorker.ts`, responsible for:
-     - [ ] Periodically querying `price_history_sync_queue` for rows where:
-       - [ ] `status IN ('pending', 'failed')`, and
-       - [ ] `next_attempt_at <= NOW()`.
-       - [ ] Apply a reasonable batch `LIMIT` (e.g. 50–100 rows per cycle).
-     - [ ] For each selected item:
-       - [ ] Mark it as `status = 'sending'` (optional but helpful to avoid concurrent workers double-sending the same row).
-       - [ ] Build the request body:
-         - [ ] Either read `payload` directly if fully denormalized; or
-         - [ ] Reconstruct from `run_id` + associated snapshot rows.
-       - [ ] Determine the target API base URL and API key from configuration (see section 5 below).
-       - [ ] POST to `POST /v1/price-history/batch` with the appropriate scraper API key (`x-api-key: <SCRAPER_API_KEY>`).
-       - [ ] On success:
-         - [ ] Set `status = 'sent'`, increment `attempts`, update `updated_at`, and optionally set a `synced_at`-like timestamp if desired.
-       - [ ] On failure (network, timeout, non-2xx, auth error):
-         - [ ] Increment `attempts`.
-         - [ ] Set `status = 'failed'`.
-         - [ ] Update `last_error` with a concise, non-sensitive error message.
-         - [ ] Compute and set `next_attempt_at` using a simple backoff strategy (e.g. `NOW() + MIN(2^attempts * baseDelay, maxDelay)`).
-   - [ ] Provide an entrypoint that can run this worker in a loop with sleep intervals (e.g. every 30–60 seconds) so it can be started as a long-running process, e.g. `npm run scraper:sync-worker`.
-   - [ ] Ensure the worker exits gracefully or retries politely when the API is unreachable (no tight loops).
+   - [x] Created a worker module in the scraper project, `src/workers/priceHistorySyncWorker.ts`, responsible for:
+     - [x] Periodically querying `price_history_sync_queue` for rows where:
+       - [x] `status IN ('pending', 'failed')`, and
+       - [x] `next_attempt_at <= NOW()`.
+       - [x] Applying a batch `LIMIT` (configurable via `SYNC_WORKER_BATCH_LIMIT`).
+     - [x] For each selected item:
+       - [x] Marking it as `status = 'sending'` to avoid double-processing.
+       - [x] Reading `payload_json` directly as the request body (`{ normalized }`).
+       - [x] Determining the target API base URL and API key from configuration (see section 5 below).
+       - [x] POSTing to `POST /v1/price-history/batch` with the scraper API key.
+       - [x] On success:
+         - [x] Setting `status = 'sent'`, updating `updated_at`.
+       - [x] On failure (network, timeout, non-2xx, auth error):
+         - [x] Incrementing `attempts`.
+         - [x] Setting `status = 'failed'`.
+         - [x] Updating `last_error` with a concise, non-sensitive error message.
+         - [x] Computing and setting `next_attempt_at` using a simple exponential backoff strategy.
+   - [x] Provided an entrypoint that runs this worker in a loop with sleep intervals, exposed via `pnpm sync-worker` in the scraper package.
+   - [x] The worker handles errors gracefully and does not spin in a tight loop when the API is unreachable.
 
-4. [ ] **Add a manual CLI sync command for one-off or ad-hoc pushes**
+4. [x] **Add a manual CLI sync command for one-off or ad-hoc pushes**
 
-   - [ ] Implement a separate CLI script, e.g. `src/tools/syncPendingRuns.ts`, that can be run **on demand** without a long-running process.
-   - [ ] Behavior:
-     - [ ] Accept command-line options such as:
-       - [ ] `--env local|production|<other>` (logical environment selector), and/or
-       - [ ] `--api-url <URL>` to override the base API URL explicitly.
-       - [ ] `--api-key <key>` to override the scraper API key explicitly (optional; can default from environment).
-       - [ ] `--run-id <id>` to force-sync a specific run only (optional).
-       - [ ] `--limit <n>` to cap the number of queue items processed in a single invocation.
-     - [ ] Within the script:
-       - [ ] Resolve configuration: derive target `apiUrl` and `apiKey` based on `--env` (see section 5) and/or overrides.
-       - [ ] Select eligible `price_history_sync_queue` rows (similar filter as the worker, but usually with a fixed `LIMIT`).
-       - [ ] For each selected row, attempt to send once and update status/attempts/next_attempt_at/last_error accordingly.
-   - [ ] Add npm/yarn scripts in the scraper `package.json`, e.g.:
-     - [ ] `"scraper:sync-pending": "ts-node src/tools/syncPendingRuns.ts"` (or compiled equivalent).
-   - [ ] Document that this command is the **manual override** path for pushing data when you explicitly want to sync now (e.g. after starting the backend, or targeting a different environment).
+   - [x] Implemented a separate CLI script, `src/tools/syncPendingRuns.ts`, that can be run **on demand** without a long-running process.
+   - [x] Behavior:
+     - [x] Accepts command-line options:
+       - [x] `--api-url <URL>` to override the base API URL explicitly.
+       - [x] `--api-key <key>` to override the scraper API key explicitly (optional; otherwise defaults from environment).
+       - [x] `--run-id <id>` to force-sync a specific run only (optional).
+       - [x] `--limit <n>` to cap the number of queue items processed in a single invocation (default: 50).
+     - [x] Within the script:
+       - [x] Resolves configuration: derives target `apiUrl` and `apiKey` from CLI overrides or environment (see section 5).
+       - [x] Selects eligible `price_history_sync_queue` rows (similar filter as the worker, but with a one-off `LIMIT`).
+       - [x] For each selected row, attempts to send once and updates `status`/`attempts`/`next_attempt_at`/`last_error` accordingly.
+   - [x] Added npm scripts in the scraper `package.json`:
+     - [x] `"sync-pending": "ts-node-dev --respawn --transpile-only src/tools/syncPendingRuns.ts"` for dev usage.
+   - [x] Documented that this command is the **manual override** path for pushing data when you explicitly want to sync now (e.g. after starting the backend, or targeting a different environment).
 
-5. [ ] **Support multiple target environments (local vs production)**
+5. [x] **Support multiple target environments (local vs production)**
 
-   - [ ] Extend scraper configuration to describe **one or more API targets**, for example:
-     - [ ] `SCRAPER_API_URL_LOCAL`
-     - [ ] `SCRAPER_API_URL_PRODUCTION`
-     - [ ] `SCRAPER_API_KEY_LOCAL`
-     - [ ] `SCRAPER_API_KEY_PRODUCTION`
-   - [ ] Alternatively, keep a single `SCRAPER_API_URL` and `SCRAPER_API_KEY` for default behavior, and allow the manual CLI to override them with command-line flags.
-   - [ ] In both the background worker and manual CLI:
-     - [ ] Derive the target URL/key from an `env` option or direct overrides, so that **the same SQLite outbox** can be drained into different environments when appropriate.
-     - [ ] Be explicit that sending historical data to production from a local DB is **intentional** and should be guarded by command-line arguments (not by default behavior).
-   - [ ] Consider adding a `target_env` column to `price_history_sync_queue` only if you foresee needing to track which environment a particular row was meant for. Otherwise, the worker/CLI can decide at send time.
+   - [x] Extended scraper configuration to allow multiple API targets via environment variables:
+     - [x] Default/backend URL and key come from `BACKEND_API_URL` and `API_KEY` (already used by the scraper).
+     - [x] Optional overrides for sync use `SYNC_API_URL` and `SYNC_API_KEY`.
+   - [x] In both the background worker and manual CLI:
+     - [x] Derive the target URL/key from CLI overrides or env vars so that **the same SQLite outbox** can be drained into different environments when appropriate.
+     - [x] Keep sending historical data to production an explicit action by requiring `SYNC_API_URL`/`SYNC_API_KEY` or explicit `--api-url`/`--api-key` flags.
+   - [ ] A `target_env` column exists on `price_history_sync_queue` for future use, but is not yet actively used to route items.
 
 6. [ ] **Idempotency and duplicate handling**
 
