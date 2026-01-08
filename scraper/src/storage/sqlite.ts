@@ -99,14 +99,15 @@ export interface NewPriceHistorySyncQueueItem {
 
 export function saveScrapedProducts(
   dbPath: string,
-  products: ScrapedProduct[]
+  products: ScrapedProduct[],
+  scrapedAtOverride?: string
 ): void {
   if (!products.length) {
     return;
   }
 
   const db = getDb(dbPath);
-  const scrapedAt = new Date().toISOString();
+  const scrapedAt = scrapedAtOverride ?? new Date().toISOString();
 
   const insert = db.prepare<{
     site_id: string;

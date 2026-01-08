@@ -11,6 +11,7 @@ export interface ScraperConfig {
   retryDelayMs: number;
   backendApiUrl: string;
   apiKey: string;
+  startPage?: number; // optional; when undefined, scraper starts from page 1
   maxPages?: number; // optional; when undefined, scraper runs with no page limit
   sqlitePath: string;
 }
@@ -44,6 +45,7 @@ export const config: ScraperConfig = {
   retryDelayMs: Number(requireEnv("RETRY_DELAY", "5000")),
   backendApiUrl: requireEnv("BACKEND_API_URL", "http://localhost:3001"),
   apiKey: requireEnv("API_KEY", "change-me"),
+  startPage: optionalPositiveIntEnv("SCRAPER_START_PAGE"),
   maxPages: optionalPositiveIntEnv("SCRAPER_MAX_PAGES"),
   sqlitePath:
     process.env.SCRAPER_SQLITE_PATH ??

@@ -84,11 +84,11 @@ async function gotoWithRetry(
   }
 }
 
-export async function scrapeSiteWithPlaywright(
+export async function* scrapeSiteWithPlaywright(
   siteConfig: SiteConfig,
   logger: pino.Logger,
-  options?: { maxPages?: number }
-): Promise<ScrapedProduct[]> {
+  options?: { maxPages?: number; startPage?: number }
+): AsyncGenerator<ScrapedProduct[], void, void> {
   const headlessEnv = process.env.PLAYWRIGHT_HEADLESS;
   const headless =
     headlessEnv === "false" || headlessEnv === "0" ? false : true;
@@ -102,9 +102,13 @@ export async function scrapeSiteWithPlaywright(
   const context = await browser.newContext({ userAgent });
   const page = await context.newPage();
 
-  const results: ScrapedProduct[] = [];
   const maxPages = options?.maxPages;
   const hasMaxPages = typeof maxPages === "number" && maxPages > 0;
+  const rawStartPage = options?.startPage;
+  const startPage =
+    typeof rawStartPage === "number" && rawStartPage > 0
+      ? Math.floor(rawStartPage)
+      : 1;
   let currentPage = 1;
   let nextUrl: string | null = siteConfig.listPageUrl;
 
@@ -155,6 +159,8 @@ export async function scrapeSiteWithPlaywright(
       const productLocator = page.locator(siteConfig.selectors.productList);
       const productCount = await productLocator.count();
 
+      const pageResults: ScrapedProduct[] = [];
+
       logger.info(
         {
           siteId: siteConfig.siteId,
@@ -164,64 +170,70 @@ export async function scrapeSiteWithPlaywright(
         "Found products on page"
       );
 
-      for (let index = 0; index < productCount; index += 1) {
-        const item = productLocator.nth(index);
+      if (currentPage >= startPage) {
+        for (let index = 0; index < productCount; index += 1) {
+          const item = productLocator.nth(index);
 
-        const sourceProductId = await item.getAttribute("data-product-id");
+          const sourceProductId = await item.getAttribute("data-product-id");
 
-        const nameElement = item.locator(siteConfig.selectors.productName);
-        const nameText = (await nameElement.textContent()) ?? "";
-        const name = nameText.trim();
+          const nameElement = item.locator(siteConfig.selectors.productName);
+          const nameText = (await nameElement.textContent()) ?? "";
+          const name = nameText.trim();
 
-        const href = (await nameElement.getAttribute("href")) ?? "";
-        const absoluteUrl =
-          href.startsWith("http://") || href.startsWith("https://")
-            ? href
-            : new URL(href, siteConfig.baseUrl).toString();
+          const href = (await nameElement.getAttribute("href")) ?? "";
+          const absoluteUrl =
+            href.startsWith("http://") || href.startsWith("https://")
+              ? href
+              : new URL(href, siteConfig.baseUrl).toString();
 
-        const priceBox = item.locator(siteConfig.selectors.productPrice);
-        const priceAttr = await priceBox.getAttribute("data-now");
-        const priceText = (await priceBox.textContent())?.trim() ?? null;
-        const price = priceAttr ? Number(priceAttr) : parseNumber(priceText);
+          const priceBox = item.locator(siteConfig.selectors.productPrice);
+          const priceAttr = await priceBox.getAttribute("data-now");
+          const priceText = (await priceBox.textContent())?.trim() ?? null;
+          const price = priceAttr ? Number(priceAttr) : parseNumber(priceText);
 
-        let rrp: number | null = null;
-        let rrpText: string | null = null;
-        const rrpBox = item.locator(siteConfig.selectors.productRrp);
-        if (await rrpBox.count()) {
-          const rrpAttr = await rrpBox.getAttribute("data-was");
-          rrpText = (await rrpBox.textContent())?.trim() ?? null;
-          rrp = rrpAttr ? Number(rrpAttr) : parseNumber(rrpText);
+          let rrp: number | null = null;
+          let rrpText: string | null = null;
+          const rrpBox = item.locator(siteConfig.selectors.productRrp);
+          if (await rrpBox.count()) {
+            const rrpAttr = await rrpBox.getAttribute("data-was");
+            rrpText = (await rrpBox.textContent())?.trim() ?? null;
+            rrp = rrpAttr ? Number(rrpAttr) : parseNumber(rrpText);
+          }
+
+          let availabilityText: string | null = null;
+          const availabilityElement = item.locator(
+            siteConfig.selectors.productAvailability
+          );
+          if (await availabilityElement.count()) {
+            availabilityText =
+              (await availabilityElement.textContent())?.trim() ?? null;
+          }
+
+          let sku: string | null = null;
+          const skuElement = item
+            .locator(siteConfig.selectors.productSku)
+            .first();
+          if (await skuElement.count()) {
+            sku = (await skuElement.getAttribute("data-sku")) ?? null;
+          }
+
+          pageResults.push({
+            siteId: siteConfig.siteId,
+            sourceProductId,
+            name,
+            url: absoluteUrl,
+            price,
+            priceText,
+            rrp,
+            rrpText,
+            availabilityText,
+            sku,
+          });
         }
 
-        let availabilityText: string | null = null;
-        const availabilityElement = item.locator(
-          siteConfig.selectors.productAvailability
-        );
-        if (await availabilityElement.count()) {
-          availabilityText =
-            (await availabilityElement.textContent())?.trim() ?? null;
+        if (pageResults.length) {
+          yield pageResults;
         }
-
-        let sku: string | null = null;
-        const skuElement = item
-          .locator(siteConfig.selectors.productSku)
-          .first();
-        if (await skuElement.count()) {
-          sku = (await skuElement.getAttribute("data-sku")) ?? null;
-        }
-
-        results.push({
-          siteId: siteConfig.siteId,
-          sourceProductId,
-          name,
-          url: absoluteUrl,
-          price,
-          priceText,
-          rrp,
-          rrpText,
-          availabilityText,
-          sku,
-        });
       }
 
       const paginationLocator = page.locator(siteConfig.paginationSelector);
@@ -257,6 +269,4 @@ export async function scrapeSiteWithPlaywright(
     await context.close();
     await browser.close();
   }
-
-  return results;
 }

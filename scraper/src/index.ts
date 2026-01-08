@@ -47,12 +47,26 @@ async function main() {
   for (const site of activeSites) {
     logger.info({ siteId: site.siteId }, "Starting sample scrape for site");
 
-    const products = await scrapeSiteWithPlaywright(site, logger, {
-      maxPages: config.maxPages,
-    });
+    const runScrapedAt = new Date().toISOString();
+    let totalProducts = 0;
+    const sampleNames: string[] = [];
 
     if (!disableSqlite) {
-      saveScrapedProducts(config.sqlitePath, products);
+      for await (const pageProducts of scrapeSiteWithPlaywright(site, logger, {
+        maxPages: config.maxPages,
+        startPage: config.startPage,
+      })) {
+        totalProducts += pageProducts.length;
+
+        if (sampleNames.length < 5) {
+          const remaining = 5 - sampleNames.length;
+          sampleNames.push(
+            ...pageProducts.slice(0, remaining).map((p) => p.name)
+          );
+        }
+
+        saveScrapedProducts(config.sqlitePath, pageProducts, runScrapedAt);
+      }
 
       const latestRows: RawScrapedProductRow[] =
         getLatestScrapedProductsForSite(config.sqlitePath, site.siteId);
@@ -118,8 +132,22 @@ async function main() {
         );
       }
     } else {
+      for await (const pageProducts of scrapeSiteWithPlaywright(site, logger, {
+        maxPages: config.maxPages,
+        startPage: config.startPage,
+      })) {
+        totalProducts += pageProducts.length;
+
+        if (sampleNames.length < 5) {
+          const remaining = 5 - sampleNames.length;
+          sampleNames.push(
+            ...pageProducts.slice(0, remaining).map((p) => p.name)
+          );
+        }
+      }
+
       logger.info(
-        { siteId: site.siteId, count: products.length },
+        { siteId: site.siteId, count: totalProducts },
         "SCRAPER_DISABLE_SQLITE is set; skipping SQLite persistence for site"
       );
     }
@@ -127,8 +155,8 @@ async function main() {
     logger.info(
       {
         siteId: site.siteId,
-        productCount: products.length,
-        sampleNames: products.slice(0, 5).map((p) => p.name),
+        productCount: totalProducts,
+        sampleNames,
         sqlitePath: config.sqlitePath,
       },
       "Completed sample scrape for site"
