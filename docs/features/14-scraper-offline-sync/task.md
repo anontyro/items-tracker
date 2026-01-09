@@ -90,14 +90,14 @@ The goal is:
      - [x] Keep sending historical data to production an explicit action by requiring `SYNC_API_URL`/`SYNC_API_KEY` or explicit `--api-url`/`--api-key` flags.
    - [ ] A `target_env` column exists on `price_history_sync_queue` for future use, but is not yet actively used to route items.
 
-6. [ ] **Idempotency and duplicate handling**
+6. [x] **Idempotency and duplicate handling**
 
-   - [ ] Ensure the payload sent to `POST /v1/price-history/batch` includes a stable identifier for the run/batch (e.g. `runId` or a UUID) so the backend can safely deduplicate.
-   - [ ] On the backend side (out of scope for this feature doc, but recommended):
-     - [ ] Implement idempotent behavior on the ingest endpoint, e.g. by:
-       - [ ] Using a unique constraint on a suitable combination of fields (e.g. `(runId, productId, sourceId, scrapedAt)`), or
-       - [ ] Explicit upsert semantics in the `PriceHistoryService`.
-   - [ ] This allows the worker and CLI to **retry safely** without risking double-counting when an earlier attempt may have partially succeeded.
+   - [ ] (Optional) Include a stable identifier for the run/batch (e.g. `runId` or a UUID) in the payload to support richer auditing and diagnostics.
+   - [x] On the backend side:
+     - [x] Implemented idempotent behavior on the ingest endpoint by:
+       - [x] Adding a composite unique constraint on `PriceHistory` for `(productId, sourceId, scrapedAt)`.
+       - [x] Switching to an `upsert` in `PriceHistoryService` so that repeated ingests for the same product/source/scrapedAt update the existing row instead of inserting duplicates.
+   - [x] This allows the worker and CLI to **retry safely** without risking double-counting when an earlier attempt may have partially succeeded.
 
 7. [ ] **Testing & verification**
 

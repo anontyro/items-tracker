@@ -2,25 +2,25 @@
 
 ## Implementation Plan
 
-- [ ] 1. Establish scraper service foundation
+- [x] 1. Establish scraper service foundation
 
   - Create a dedicated `scraper` Node.js/TypeScript project (separate package or service) using Playwright.
   - Configure TypeScript, ESLint/Prettier, basic folder structure (`src/config`, `src/scraper`, `src/jobs`).
-  - Add core dependencies: `playwright`, `axios`, `bullmq`, `dotenv` (if needed), `pino` or similar logger.
+  - Add core dependencies: `playwright`, `axios`, `dotenv` (if needed), `pino` or similar logger.
   - Define env loading for `SCRAPE_SCHEDULE`, `RATE_LIMIT_DELAY`, `MAX_RETRIES`, `RETRY_DELAY`, `BACKEND_API_URL`, `API_KEY`.
   - _PRD refs: 3.1.1, 3.1.2, 4.1 Scraper Service_
-  - Status: Not started
+  - Status: Implemented (scraper service foundation exists)
 
-- [ ] 2. Define site configuration format and loader
+- [x] 2. Define site configuration format and loader
 
   - Create a JSON schema/type for site config matching PRD (siteId, siteName, baseUrl, listPageUrl, selectors, paginationSelector, rateLimitMs, isActive).
   - Implement a config loader that reads site configs from a known directory (e.g. `config/sites/*.json`).
   - Validate site configs on startup (required fields present, selectors non-empty, `rateLimitMs` positive).
   - Implement a simple in-memory registry of active sites (filter `isActive === true`).
   - _PRD refs: 3.1.3, 3.1.4 (step 1)_
-  - Status: Not started
+  - Status: Implemented (site config types and loader in place)
 
-- [ ] 3. Implement core scraping flow with Playwright
+- [x] 3. Implement core scraping flow with Playwright
 
   - Implement a `ScrapeRunner` that, for a given site config:
     - Launches Playwright browser (headless) and opens the configured list page.
@@ -32,7 +32,7 @@
   - Enforce rate limiting between requests using `rateLimitMs` / `RATE_LIMIT_DELAY`.
   - Normalize scraped data into a typed DTO that matches the backend bulk upload format.
   - _PRD refs: 3.1.4 (steps 2–7), 4.1 Scraper Service_
-  - Status: Not started
+  - Status: Implemented for initial site (further refinements possible)
 
 - [ ] 4. Implement retry and error handling
 
@@ -43,16 +43,16 @@
   - _PRD refs: 3.1.4 (step 6), 3.1.5, 8.3 Reliability_
   - Status: Not started
 
-- [ ] 5. Integrate with backend bulk upload API
+- [x] 5. Integrate with backend bulk upload API
 
-  - Define a `BulkUploadRequest` TypeScript type matching `POST /api/v1/scraper/bulk-upload` body.
+  - Define a `BulkUploadRequest` TypeScript type matching the ingest endpoint body.
   - Implement an HTTP client wrapper (e.g. using `axios`) configured with `BACKEND_API_URL` and `API_KEY` (Authorization header).
   - Implement a function that:
     - Accepts normalized product data and metadata (scrapeTimestamp, siteId).
     - Sends a bulk upload request and handles success + error responses.
   - Log counts of created/updated products and any errors returned by the backend.
   - _PRD refs: 3.1.1 (submit bulk data), 3.1.4 (step 8), 3.2.2 Bulk Upload API, 4.1 Scraper Service_
-  - Status: Not started
+  - Status: Implemented (via `/v1/price-history/batch` ingest endpoint)
 
 - [ ] 6. Job scheduling and queue integration (BullMQ)
 

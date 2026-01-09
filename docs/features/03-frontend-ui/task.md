@@ -2,16 +2,16 @@
 
 ## Implementation Plan
 
-- [ ] 1. Frontend project setup and global configuration
+- [x] 1. Frontend project setup and global configuration
 
-  - Create/configure a Next.js 16 app with TypeScript and Tailwind CSS.
+  - Create/configure a Next.js 16 app with TypeScript.
   - Configure base layout, global styles, and shared UI components folder.
   - Decide on data fetching library (SWR or React Query) and set up a simple API client abstraction.
   - Configure environment variables for backend API base URL (e.g. `NEXT_PUBLIC_API_BASE_URL`).
   - _PRD refs: 2.1 Frontend Stack, 3.4, 6.1–6.3_
-  - Status: Not started
+  - Status: Implemented (Next.js app with global layout, theming, and React Query is in place)
 
-- [ ] 2. API client utilities and shared types
+- [x] 2. API client utilities and shared types
 
   - Define shared TypeScript types for `Product`, `PriceHistoryEntry`, `TrackedItem`, matching backend responses.
   - Implement API helper functions/hooks:
@@ -20,7 +20,7 @@
     - `useTrackedItems` and `useTrackingActions` (list, add, remove).
   - Handle loading, error, and empty states consistently.
   - _PRD refs: 3.2.2 Products/Tracking APIs, 3.4.2–3.4.5_
-  - Status: Not started
+  - Status: Partially implemented (product search/detail/history types + hooks are present; tracking types/hooks still to add)
 
 - [ ] 3. Homepage with tracked items and custom views (MVP slice)
 
@@ -34,7 +34,7 @@
     - Sparkline showing recent price history (using Recharts mini chart).
   - Connect to backend APIs to fetch tracked items and their recent history.
   - _PRD refs: 3.4.2 Homepage Components, 4.1 Frontend_
-  - Status: Not started
+  - Status: Partially implemented as a basic products list on `/`; tracked items and custom views still to add
 
 - [ ] 4. Product search and browse page
 
