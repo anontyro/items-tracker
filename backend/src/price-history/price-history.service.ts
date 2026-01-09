@@ -138,18 +138,36 @@ export class PriceHistoryService {
         createdSource = true;
       }
 
-      await tx.priceHistory.create({
-        data: {
+      const scrapedAt = new Date(snapshot.scrapedAt);
+
+      await tx.priceHistory.upsert({
+        where: {
+          productId_sourceId_scrapedAt: {
+            productId: product.id,
+            sourceId: source.id,
+            scrapedAt,
+          },
+        },
+        create: {
           productId: product.id,
           sourceId: source.id,
           price: new Prisma.Decimal(snapshot.price),
           rrp:
             snapshot.rrp != null ? new Prisma.Decimal(snapshot.rrp) : undefined,
           availability: snapshot.availability ?? undefined,
-          scrapedAt: new Date(snapshot.scrapedAt),
+          scrapedAt,
           scrapeSuccess: true,
           scrapeJobId: undefined,
           responseTimeMs: undefined,
+        },
+        update: {
+          // On retry or duplicate ingest for the same product/source/scrapedAt,
+          // refresh the stored price and related fields instead of inserting.
+          price: new Prisma.Decimal(snapshot.price),
+          rrp:
+            snapshot.rrp != null ? new Prisma.Decimal(snapshot.rrp) : undefined,
+          availability: snapshot.availability ?? undefined,
+          scrapeSuccess: true,
         },
       });
 

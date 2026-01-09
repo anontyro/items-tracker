@@ -62,6 +62,7 @@ model PriceHistory {
   @@index([productId, scrapedAt])
   @@index([sourceId, scrapedAt])
   @@index([scrapedAt])
+  @@unique([productId, sourceId, scrapedAt])
 }
 
 model ProductTracking {
