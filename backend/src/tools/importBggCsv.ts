@@ -59,9 +59,12 @@ async function main() {
     })
   );
 
+  let seen = 0;
   let processed = 0;
 
   for await (const record of stream as AsyncIterable<Record<string, unknown>>) {
+    seen += 1;
+
     const rawBggId = record["bgg_id"] ?? record["id"];
     const bggId = rawBggId != null ? String(rawBggId).trim() : "";
     if (!bggId) {
@@ -79,11 +82,17 @@ async function main() {
     const rawName = record["name"];
     const name = rawName != null ? String(rawName).trim() || null : null;
 
-    const yearPublished = toOptionalInt(record["year_published"]);
+    const yearPublished = toOptionalInt(
+      record["year_published"] ?? record["yearpublished"]
+    );
     const rank = toOptionalInt(record["rank"]);
-    const bayesAverage = toOptionalFloat(record["bayes_average"]);
+    const bayesAverage = toOptionalFloat(
+      record["bayes_average"] ?? record["bayesaverage"]
+    );
     const average = toOptionalFloat(record["average"]);
-    const usersRated = toOptionalInt(record["users_rated"]);
+    const usersRated = toOptionalInt(
+      record["users_rated"] ?? record["usersrated"]
+    );
 
     const now = new Date();
 
@@ -124,9 +133,13 @@ async function main() {
   }
 
   if (dryRun) {
-    console.log(`Dry run complete. Would have processed ${processed} rows.`);
+    console.log(
+      `Dry run complete. Seen ${seen} rows; would import ${processed} rows.`
+    );
   } else {
-    console.log(`Import complete. Processed ${processed} rows.`);
+    console.log(
+      `Import complete. Seen ${seen} rows; imported ${processed} rows.`
+    );
   }
 
   await prisma.$disconnect();
