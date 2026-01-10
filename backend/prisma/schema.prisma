@@ -97,3 +97,21 @@ model WishlistItem {
   @@index([productId])
   @@index([userId])
 }
+
+model BggGame {
+  id            String   @id @default(uuid())
+  bggId         String   @unique
+  primaryName   String
+  name          String?
+  yearPublished Int?
+  rank          Int?
+  bayesAverage  Float?
+  average       Float?
+  usersRated    Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastSeenAt    DateTime?
+
+  @@index([primaryName])
+  @@index([name])
+}
