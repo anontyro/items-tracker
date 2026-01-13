@@ -1,3 +1,5 @@
+import { BGG_ALIAS_MAP, normalizeForMatch } from "./bggAliasMap";
+
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import path from "path";
@@ -31,24 +33,6 @@ function parseArgs(argv: string[]): CliOptions {
 function normalizeName(name: string | null | undefined): string {
   if (!name) return "";
   return name.trim().toLowerCase();
-}
-
-// More aggressive normalization for matching against BGG names.
-// - lowercases
-// - removes punctuation (including !, :, etc.)
-// - removes common edition markers ("1st", "2nd", "edition", "ed")
-// - collapses whitespace
-function normalizeForMatch(name: string | null | undefined): string {
-  if (!name) return "";
-
-  const lowered = name.toLowerCase();
-
-  return lowered
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\b(1st|2nd|3rd|[0-9]+th)\b/g, " ")
-    .replace(/\b(ed|edition)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 async function main() {
@@ -112,6 +96,85 @@ async function main() {
         `Skipping product ${product.id} with empty/whitespace name: "${name}"`
       );
       continue;
+    }
+
+    // Alias pass: if we have a manual mapping for this product name, try that first.
+    const aliasKey = normalizeForMatch(name);
+    const aliasCanonicalName = BGG_ALIAS_MAP[aliasKey];
+
+    if (aliasCanonicalName) {
+      const aliasCandidates = await (prisma as any).bggGame.findMany({
+        where: {
+          OR: [
+            {
+              primaryName: {
+                equals: aliasCanonicalName,
+                mode: "insensitive",
+              },
+            },
+            {
+              name: {
+                equals: aliasCanonicalName,
+                mode: "insensitive",
+              },
+            },
+          ],
+        },
+        take: 5,
+      });
+
+      if (aliasCandidates.length === 1) {
+        const match = aliasCandidates[0];
+        matched += 1;
+
+        matchedLog.push({
+          productId: product.id,
+          productName: name,
+          bggId: match.bggId as string,
+          bggPrimaryName: match.primaryName as string,
+        });
+
+        console.log(
+          `${dryRun ? "[DRY-RUN] " : ""}Product ${product.id} ("${name}") ` +
+            `→ BGG ${match.bggId} ("${match.primaryName}") [alias]`
+        );
+
+        if (!dryRun) {
+          await prisma.product.update({
+            where: { id: product.id },
+            data: {
+              bggId: match.bggId as string,
+              bggCanonicalName:
+                (match.primaryName as string) ?? (match.name as string | null),
+            },
+          });
+          updated += 1;
+        }
+
+        continue;
+      } else if (aliasCandidates.length > 1) {
+        ambiguous += 1;
+        ambiguousLog.push({
+          productId: product.id,
+          productName: name,
+          candidates: aliasCandidates.map((c: any) => ({
+            bggId: c.bggId as string,
+            primaryName: c.primaryName as string,
+            name: (c.name as string | null) ?? null,
+            yearPublished: (c.yearPublished as number | null) ?? null,
+            rank: (c.rank as number | null) ?? null,
+          })),
+        });
+        console.log(
+          `Ambiguous alias matches for product ${
+            product.id
+          } ("${name}") → ${aliasCandidates
+            .map((c: any) => `${c.bggId}:${c.primaryName}`)
+            .join(", ")}`
+        );
+        continue;
+      }
+      // If aliasCandidates.length === 0, fall through to normal heuristic-based matching.
     }
 
     // First pass: strict case-insensitive equality on primaryName or name.
@@ -220,7 +283,11 @@ async function main() {
     if (!dryRun) {
       await prisma.product.update({
         where: { id: product.id },
-        data: { bggId: match.bggId },
+        data: {
+          bggId: match.bggId,
+          bggCanonicalName:
+            (match.primaryName as string) ?? (match.name as string | null),
+        },
       });
       updated += 1;
     }
