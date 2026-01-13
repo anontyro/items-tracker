@@ -8,6 +8,7 @@
     "start": "node dist/main.js",
     "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "bgg:import": "ts-node-dev --respawn --transpile-only src/tools/importBggCsv.ts --file ./data/boardgames_enriched.csv",
+    "bgg:link-products": "ts-node-dev --respawn --transpile-only src/tools/linkProductsToBgg.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev --name init",
     "prisma:studio": "prisma studio"

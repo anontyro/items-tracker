@@ -4,45 +4,45 @@ This feature adds support for importing BoardGameGeek CSV dumps into the backend
 
 ## Implementation Plan
 
-1. [ ] **Define BGG reference model in Prisma schema**
+1. [x] **Define BGG reference model in Prisma schema**
 
-   - [ ] Add a `BggGame` model to `backend/prisma/schema.prisma` to store BGG catalog entries.
-   - [ ] Include key fields from the CSV dump (e.g. `bggId`, `primaryName`, `name`, `yearPublished`, `rank`, `bayesAverage`, `average`, `usersRated`, flags, basic metadata).
-   - [ ] Add indexes on `primaryName` and `name` to support efficient lookup.
-   - [ ] Run `prisma migrate dev` to apply the new model to the database.
+   - [x] Add a `BggGame` model to `backend/prisma/schema.prisma` to store BGG catalog entries.
+   - [x] Include key fields from the CSV dump (e.g. `bggId`, `primaryName`, `name`, `yearPublished`, `rank`, `bayesAverage`, `average`, `usersRated`, flags, basic metadata).
+   - [x] Add indexes on `primaryName` and `name` to support efficient lookup.
+   - [x] Run `prisma migrate dev` to apply the new model to the database.
 
-2. [ ] **Implement BGG CSV import script (reference table only)**
+2. [x] **Implement BGG CSV import script (reference table only)**
 
-   - [ ] Create a backend script/CLI (e.g. `src/tools/importBggCsv.ts`) that:
-     - [ ] Accepts a path to the BGG CSV dump as a command-line argument.
-     - [ ] Streams/parses the CSV (to handle large files safely).
-     - [ ] Maps CSV columns to the `BggGame` fields.
-     - [ ] Upserts rows by `bggId` (create if new, update if existing) so the catalog can be refreshed from newer dumps.
-   - [ ] Add a package script (e.g. `bgg:import`) to `backend/package.json` to run this tool.
-   - [ ] Log summary stats (rows processed, created, updated, skipped) at the end.
+   - [x] Create a backend script/CLI (e.g. `src/tools/importBggCsv.ts`) that:
+     - [x] Accepts a path to the BGG CSV dump as a command-line argument.
+     - [x] Streams/parses the CSV (to handle large files safely).
+     - [x] Maps CSV columns to the `BggGame` fields.
+     - [x] Upserts rows by `bggId` (create if new, update if existing) so the catalog can be refreshed from newer dumps.
+   - [x] Add a package script (e.g. `bgg:import`) to `backend/package.json` to run this tool.
+   - [x] Log summary stats (rows seen vs imported) at the end.
 
-3. [ ] **Add optional freshness tracking for BGG catalog**
+3. [x] **Add optional freshness tracking for BGG catalog**
 
-   - [ ] Extend `BggGame` with timestamps such as `createdAt`, `updatedAt`, and optional `lastSeenAt`.
-   - [ ] Update import logic so each run:
-     - [ ] Sets/updates `lastSeenAt` for all rows seen in the current CSV.
+   - [x] Extend `BggGame` with timestamps such as `createdAt`, `updatedAt`, and optional `lastSeenAt`.
+   - [x] Update import logic so each run:
+     - [x] Sets/updates `lastSeenAt` for all rows seen in the current CSV.
      - [ ] Optionally flags rows not seen for a long time (without deleting) so they can be considered stale later.
 
-4. [ ] **Implement Product↔BGG auto-linking script**
+4. [x] **Implement Product↔BGG auto-linking script**
 
-   - [ ] Create a second backend script/CLI (e.g. `src/tools/linkProductsToBgg.ts`) that:
-     - [ ] Fetches all `Product` rows where `bggId IS NULL`.
-     - [ ] For each product, searches `BggGame` using a reasonable heuristic (e.g. case-insensitive exact match of `Product.name` to `BggGame.primaryName` or `name`).
-     - [ ] If a single confident match is found, sets `product.bggId` to that `BggGame.bggId`.
-   - [ ] Support a **dry-run mode** that logs proposed matches without writing to the DB.
-   - [ ] Add a package script (e.g. `bgg:link-products`) in `backend/package.json`.
-   - [ ] Log summary stats (products scanned, matched, updated, ambiguous, unmatched).
+   - [x] Create a second backend script/CLI (e.g. `src/tools/linkProductsToBgg.ts`) that:
+     - [x] Fetches all `Product` rows where `bggId IS NULL`.
+     - [x] For each product, searches `BggGame` using a reasonable heuristic (e.g. case-insensitive exact match of `Product.name` to `BggGame.primaryName` or `name`).
+     - [x] If a single confident match is found, sets `product.bggId` to that `BggGame.bggId`.
+   - [x] Support a **dry-run mode** that logs proposed matches without writing to the DB.
+   - [x] Add a package script (e.g. `bgg:link-products`) in `backend/package.json`.
+   - [x] Log summary stats (products scanned, matched, updated, ambiguous, unmatched).
 
-5. [ ] **Handle ambiguous or low-confidence matches safely**
+5. [x] **Handle ambiguous or low-confidence matches safely**
 
-   - [ ] Define conservative matching rules (e.g. only auto-link on exact or near-exact names, optional filters like `yearPublished` when/if available).
-   - [ ] Avoid linking when multiple plausible `BggGame` matches exist; record these cases for manual review (e.g. as log output or an optional `BggMatchCandidate` table).
-   - [ ] Ensure the script never overwrites an existing `product.bggId` that has already been set (either manually or by a previous confirmed run).
+   - [x] Define conservative matching rules (e.g. only auto-link on exact or near-exact names, optional filters like `yearPublished` when/if available).
+   - [x] Avoid linking when multiple plausible `BggGame` matches exist; record these cases for manual review (e.g. as log output).
+   - [x] Ensure the script never overwrites an existing `product.bggId` that has already been set (either manually or by a previous confirmed run).
 
 6. [ ] **Expose backend helper API endpoints for future UI integration (optional)**
 
