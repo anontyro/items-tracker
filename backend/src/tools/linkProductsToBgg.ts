@@ -1,5 +1,6 @@
 import { BGG_ALIAS_MAP, normalizeForMatch } from "./bggAliasMap";
 
+import { BGG_MANUAL_OVERRIDES } from "./bggManualOverrides";
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import path from "path";
@@ -98,29 +99,76 @@ async function main() {
       continue;
     }
 
+    // Manual per-product override: if this productId has a configured
+    // explicit BGG mapping, apply it and skip aliases/heuristics.
+    const manualOverride = BGG_MANUAL_OVERRIDES[product.id];
+
+    if (manualOverride) {
+      matched += 1;
+
+      matchedLog.push({
+        productId: product.id,
+        productName: name,
+        bggId: manualOverride.bggId,
+        bggPrimaryName: manualOverride.bggCanonicalName,
+      });
+
+      console.log(
+        `${dryRun ? "[DRY-RUN] " : ""}Product ${product.id} ("${name}") ` +
+          `→ BGG ${manualOverride.bggId} ("${manualOverride.bggCanonicalName}") [manual]`
+      );
+
+      if (!dryRun) {
+        await prisma.product.update({
+          where: { id: product.id },
+          data: {
+            bggId: manualOverride.bggId,
+            bggCanonicalName: manualOverride.bggCanonicalName,
+          },
+        });
+        updated += 1;
+      }
+
+      continue;
+    }
+
     // Alias pass: if we have a manual mapping for this product name, try that first.
     const aliasKey = normalizeForMatch(name);
     const aliasCanonicalName = BGG_ALIAS_MAP[aliasKey];
 
     if (aliasCanonicalName) {
-      const aliasCandidates = await (prisma as any).bggGame.findMany({
+      const aliasNorm = normalizeForMatch(aliasCanonicalName);
+      const aliasFirstToken = aliasNorm.split(" ")[0] || aliasNorm;
+
+      const roughAliasCandidates = await (prisma as any).bggGame.findMany({
         where: {
           OR: [
             {
               primaryName: {
-                equals: aliasCanonicalName,
+                contains: aliasFirstToken,
                 mode: "insensitive",
               },
             },
             {
               name: {
-                equals: aliasCanonicalName,
+                contains: aliasFirstToken,
                 mode: "insensitive",
               },
             },
           ],
         },
-        take: 5,
+        take: 20,
+      });
+
+      const aliasCandidates = roughAliasCandidates.filter((c: any) => {
+        const candidateName =
+          (c.primaryName as string) ?? (c.name as string) ?? "";
+        const candNorm = normalizeForMatch(candidateName);
+        return (
+          candNorm === aliasNorm ||
+          candNorm.startsWith(aliasNorm) ||
+          aliasNorm.startsWith(candNorm)
+        );
       });
 
       if (aliasCandidates.length === 1) {
