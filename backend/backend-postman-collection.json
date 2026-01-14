@@ -1,0 +1,138 @@
+{
+  "info": {
+    "name": "Site Items Tracker Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Search products",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{frontend_api_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/products?q=catan&limit=20&offset=0",
+          "host": ["{{base_host}}"],
+          "port": "{{base_port}}",
+          "path": ["v1", "products"],
+          "query": [
+            { "key": "q", "value": "catan" },
+            { "key": "limit", "value": "20" },
+            { "key": "offset", "value": "0" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get product by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{frontend_api_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/products/{{product_id}}",
+          "host": ["{{base_host}}"],
+          "port": "{{base_port}}",
+          "path": ["v1", "products", "{{product_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Get product history",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{frontend_api_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/products/{{product_id}}/history?limit=30",
+          "host": ["{{base_host}}"],
+          "port": "{{base_port}}",
+          "path": ["v1", "products", "{{product_id}}", "history"],
+          "query": [{ "key": "limit", "value": "30" }]
+        }
+      }
+    },
+    {
+      "name": "List products missing BGG",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{frontend_api_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/products/missing-bgg?limit=50&offset=0",
+          "host": ["{{base_host}}"],
+          "port": "{{base_port}}",
+          "path": ["v1", "products", "missing-bgg"],
+          "query": [
+            { "key": "limit", "value": "50" },
+            { "key": "offset", "value": "0" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Set product BGG mapping",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{frontend_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"bggId\": \"13\",\n  \"bggCanonicalName\": \"Catan\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/products/{{product_id}}/bgg",
+          "host": ["{{base_host}}"],
+          "port": "{{base_port}}",
+          "path": ["v1", "products", "{{product_id}}", "bgg"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3005"
+    },
+    {
+      "key": "base_host",
+      "value": "localhost"
+    },
+    {
+      "key": "base_port",
+      "value": "3005"
+    },
+    {
+      "key": "frontend_api_key",
+      "value": "change-me-frontend"
+    },
+    {
+      "key": "product_id",
+      "value": "prod_123"
+    }
+  ]
+}

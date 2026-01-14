@@ -1,10 +1,12 @@
 import {
+  Body,
   Controller,
   Get,
   Headers,
   Logger,
   NotFoundException,
   Param,
+  Post,
   Query,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -63,6 +65,42 @@ export class ProductsController {
     };
   }
 
+  @Get("missing-bgg")
+  async getProductsMissingBgg(
+    @Headers("x-api-key") apiKey: string | undefined,
+    @Query("limit") limitRaw?: string,
+    @Query("offset") offsetRaw?: string
+  ) {
+    this.assertApiKey(apiKey);
+
+    const limit = Math.min(Math.max(Number(limitRaw) || 50, 1), 200);
+    const offset = Math.max(Number(offsetRaw) || 0, 0);
+
+    const where = {
+      bggId: null as string | null,
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        orderBy: { createdAt: "asc" },
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    this.logger.log(
+      { limit, offset, total },
+      "Products missing BGG ID search executed"
+    );
+
+    return {
+      items,
+      total,
+    };
+  }
+
   @Get(":id")
   async getProductById(
     @Headers("x-api-key") apiKey: string | undefined,
@@ -103,5 +141,35 @@ export class ProductsController {
     });
 
     return { items };
+  }
+
+  @Post(":id/bgg")
+  async setProductBggId(
+    @Headers("x-api-key") apiKey: string | undefined,
+    @Param("id") id: string,
+    @Body()
+    body: {
+      bggId?: string | null;
+      bggCanonicalName?: string | null;
+    }
+  ) {
+    this.assertApiKey(apiKey);
+
+    const { bggId, bggCanonicalName } = body;
+
+    const updated = await this.prisma.product.update({
+      where: { id },
+      data: {
+        bggId: bggId ?? null,
+        bggCanonicalName: bggCanonicalName ?? null,
+      },
+      include: {
+        sources: {
+          orderBy: { sourceName: "asc" },
+        },
+      },
+    });
+
+    return updated;
   }
 }

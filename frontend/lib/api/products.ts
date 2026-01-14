@@ -102,3 +102,61 @@ export async function fetchProductHistory(options: {
 
   return res.json();
 }
+
+export async function fetchProductsMissingBgg(options: {
+  limit?: number;
+  offset?: number;
+  adminApiKey: string;
+}): Promise<ProductSearchResponse> {
+  const { limit = 50, offset = 0, adminApiKey } = options;
+
+  const url = new URL(
+    "/api/products/admin/missing-bgg",
+    window.location.origin
+  );
+
+  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("offset", String(offset));
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "x-admin-api-key": adminApiKey,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch products missing BGG ID: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function updateProductBggId(options: {
+  productId: string;
+  bggId: string | null;
+  bggCanonicalName?: string | null;
+  adminApiKey: string;
+}): Promise<ProductDetail> {
+  const { productId, bggId, bggCanonicalName, adminApiKey } = options;
+
+  const url = new URL(
+    `/api/products/admin/${encodeURIComponent(productId)}/bgg`,
+    window.location.origin
+  );
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-api-key": adminApiKey,
+    },
+    body: JSON.stringify({ bggId, bggCanonicalName }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to update product BGG ID: ${res.status}`);
+  }
+
+  return res.json();
+}

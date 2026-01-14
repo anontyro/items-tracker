@@ -1,0 +1,215 @@
+# Backend API Routes and Postman Collection
+
+- +This document describes the **backend API routes** exposed by the NestJS app under `/v1`, and provides a **Postman collection** that you can import to quickly test and work with the API.
+- +All examples assume:
+- +- Backend server at `http://localhost:3005`
+  +- `FRONTEND_API_KEY` is configured and matches the value used by the frontend
+- +Environment variables (backend):
+- +- `API_PORT` – port the NestJS API listens on (default `3005`)
+  +- `API_VERSION` – base version prefix (e.g. `v1`)
+  +- `FRONTEND_API_KEY` – API key required for frontend and tooling to call protected endpoints (sent as `x-api-key`)
+  +- `SCRAPER_API_KEY` – API key used by the scraper service (also via `x-api-key` on scraper-specific endpoints)
+- +---
+- +## Products endpoints
+- +All of these endpoints require the header:
+- +`http
++x-api-key: <FRONTEND_API_KEY>
++`
+- +Base path: `http://localhost:3005/v1/products`
+- +### `GET /v1/products`
+- +- Search and paginate products.
+  +- Query params: `q`, `limit`, `offset`.
+- +### `GET /v1/products/:id`
+- +- Fetch a single product by ID, including its sources.
+- +### `GET /v1/products/:id/history`
+- +- Fetch recent price history points for a product.
+  +- Query param: `limit`.
+- +### `GET /v1/products/missing-bgg`
+- +- List products that currently have `bggId = null`.
+  +- Query params: `limit`, `offset`.
+- +### `POST /v1/products/:id/bgg`
+- +- Set or update a product's BGG mapping.
+  +- Request body:
+- +```jsonc
+  +{
+- "bggId": "13", // or null to clear
+- "bggCanonicalName": "Catan" // optional canonical name
+  +}
+  +```
+- +---
+- +## Postman collection
+- +You can use the following Postman collection JSON to quickly set up requests against the backend. Copy the JSON into a file (for example `backend-postman-collection.json`) and import it into Postman.
+- +```json
+  +{
+- "info": {
+- "name": "Site Items Tracker Backend API",
+- "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+- },
+- "item": [
+- {
+-      "name": "Search products",
+-      "request": {
+-        "method": "GET",
+-        "header": [
+-          {
+-            "key": "x-api-key",
+-            "value": "{{frontend_api_key}}"
+-          }
+-        ],
+-        "url": {
+-          "raw": "{{base_url}}/v1/products?q=catan&limit=20&offset=0",
+-          "host": [
+-            "{{base_host}}"
+-          ],
+-          "port": "{{base_port}}",
+-          "path": [
+-            "v1",
+-            "products"
+-          ],
+-          "query": [
+-            { "key": "q", "value": "catan" },
+-            { "key": "limit", "value": "20" },
+-            { "key": "offset", "value": "0" }
+-          ]
+-        }
+-      }
+- },
+- {
+-      "name": "Get product by ID",
+-      "request": {
+-        "method": "GET",
+-        "header": [
+-          {
+-            "key": "x-api-key",
+-            "value": "{{frontend_api_key}}"
+-          }
+-        ],
+-        "url": {
+-          "raw": "{{base_url}}/v1/products/{{product_id}}",
+-          "host": [
+-            "{{base_host}}"
+-          ],
+-          "port": "{{base_port}}",
+-          "path": [
+-            "v1",
+-            "products",
+-            "{{product_id}}"
+-          ]
+-        }
+-      }
+- },
+- {
+-      "name": "Get product history",
+-      "request": {
+-        "method": "GET",
+-        "header": [
+-          {
+-            "key": "x-api-key",
+-            "value": "{{frontend_api_key}}"
+-          }
+-        ],
+-        "url": {
+-          "raw": "{{base_url}}/v1/products/{{product_id}}/history?limit=30",
+-          "host": [
+-            "{{base_host}}"
+-          ],
+-          "port": "{{base_port}}",
+-          "path": [
+-            "v1",
+-            "products",
+-            "{{product_id}}",
+-            "history"
+-          ],
+-          "query": [
+-            { "key": "limit", "value": "30" }
+-          ]
+-        }
+-      }
+- },
+- {
+-      "name": "List products missing BGG",
+-      "request": {
+-        "method": "GET",
+-        "header": [
+-          {
+-            "key": "x-api-key",
+-            "value": "{{frontend_api_key}}"
+-          }
+-        ],
+-        "url": {
+-          "raw": "{{base_url}}/v1/products/missing-bgg?limit=50&offset=0",
+-          "host": [
+-            "{{base_host}}"
+-          ],
+-          "port": "{{base_port}}",
+-          "path": [
+-            "v1",
+-            "products",
+-            "missing-bgg"
+-          ],
+-          "query": [
+-            { "key": "limit", "value": "50" },
+-            { "key": "offset", "value": "0" }
+-          ]
+-        }
+-      }
+- },
+- {
+-      "name": "Set product BGG mapping",
+-      "request": {
+-        "method": "POST",
+-        "header": [
+-          {
+-            "key": "x-api-key",
+-            "value": "{{frontend_api_key}}"
+-          },
+-          {
+-            "key": "Content-Type",
+-            "value": "application/json"
+-          }
+-        ],
+-        "body": {
+-          "mode": "raw",
+-          "raw": "{\n  \"bggId\": \"13\",\n  \"bggCanonicalName\": \"Catan\"\n}"
+-        },
+-        "url": {
+-          "raw": "{{base_url}}/v1/products/{{product_id}}/bgg",
+-          "host": [
+-            "{{base_host}}"
+-          ],
+-          "port": "{{base_port}}",
+-          "path": [
+-            "v1",
+-            "products",
+-            "{{product_id}}",
+-            "bgg"
+-          ]
+-        }
+-      }
+- }
+- ],
+- "variable": [
+- {
+-      "key": "base_url",
+-      "value": "http://localhost:3005"
+- },
+- {
+-      "key": "base_host",
+-      "value": "localhost"
+- },
+- {
+-      "key": "base_port",
+-      "value": "3005"
+- },
+- {
+-      "key": "frontend_api_key",
+-      "value": "change-me-frontend"
+- },
+- {
+-      "key": "product_id",
+-      "value": "prod_123"
+- }
+- ]
+  +}
+  +```
+- +You can adjust the variables (for example `frontend_api_key` or `product_id`) after importing the collection to match your local environment.

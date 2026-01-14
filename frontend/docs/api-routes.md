@@ -12,6 +12,7 @@ Environment variables (frontend):
 
 - `BACKEND_API_URL` – base URL for the NestJS backend (e.g. `http://localhost:3005`)
 - `FRONTEND_API_KEY` – API key that the frontend uses to call the backend
+- `ADMIN_API_KEY` – admin API key used by the browser to call admin-only frontend routes (sent as `x-admin-api-key`)
 
 ---
 
@@ -172,6 +173,105 @@ curl "http://localhost:3000/api/products/prod_123/history?limit=10"
 
 ---
 
+## Route: GET `/api/products/admin/missing-bgg`
+
+- **Description**
+
+  - Admin-only endpoint to list products that do not yet have a BGG ID.
+  - Requires header `x-admin-api-key: ADMIN_API_KEY`.
+  - Proxies to backend `GET /v1/products/missing-bgg` with header `x-api-key: FRONTEND_API_KEY`.
+
+- **Query parameters**
+
+  - **`limit`** (optional, number, default `50`)
+    - Maximum number of items to return.
+  - **`offset`** (optional, number, default `0`)
+    - Zero-based offset for pagination.
+
+- **Sample request**
+
+```bash
+curl "http://localhost:3000/api/products/admin/missing-bgg?limit=20&offset=0" \
+  -H "x-admin-api-key: $ADMIN_API_KEY"
+```
+
+- **Sample response body** (`200 OK`)
+
+```json
+{
+  "items": [
+    {
+      "id": "prod_200",
+      "name": "Some Game Without BGG",
+      "type": "board_game"
+    }
+  ],
+  "total": 1
+}
+```
+
+- **Error responses**
+  - `401 Unauthorized` – if `x-admin-api-key` does not match `ADMIN_API_KEY`.
+  - `500 Internal Server Error` – on unexpected backend or proxy failure.
+
+---
+
+## Route: POST `/api/products/admin/:id/bgg`
+
+- **Description**
+
+  - Admin-only endpoint to set or update a product's BGG ID and canonical name.
+  - Requires header `x-admin-api-key: ADMIN_API_KEY`.
+  - Proxies to backend `POST /v1/products/:id/bgg` with header `x-api-key: FRONTEND_API_KEY`.
+
+- **Path parameters**
+
+  - **`id`** (string)
+    - Product ID as stored in the database.
+
+- **Request body**
+
+```json
+{
+  "bggId": "13",
+  "bggCanonicalName": "Catan"
+}
+```
+
+- **Sample request**
+
+```bash
+curl -X POST "http://localhost:3000/api/products/admin/prod_123/bgg" \
+  -H "Content-Type: application/json" \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -d '{
+    "bggId": "13",
+    "bggCanonicalName": "Catan"
+  }'
+```
+
+- **Sample response body** (`200 OK`)
+
+```json
+{
+  "id": "prod_123",
+  "name": "Catan",
+  "type": "board_game",
+  "bggId": "13",
+  "bggCanonicalName": "Catan",
+  "createdAt": "2025-01-01T12:00:00.000Z",
+  "updatedAt": "2025-01-02T08:30:00.000Z",
+  "sources": []
+}
+```
+
+- **Error responses**
+  - `401 Unauthorized` – if `x-admin-api-key` does not match `ADMIN_API_KEY`.
+  - `404 Not Found` – if no product exists with the given `id`.
+  - `500 Internal Server Error` – on unexpected backend or proxy failure.
+
+---
+
 ## Backend mappings summary
 
 - **`GET /api/products`**
@@ -186,8 +286,22 @@ curl "http://localhost:3000/api/products/prod_123/history?limit=10"
   - Adds header: `x-api-key: FRONTEND_API_KEY`
 
 - **`GET /api/products/:id/history`**
+
   - Proxies to **`GET /v1/products/:id/history`**
   - Forwards query param: `limit`
   - Adds header: `x-api-key: FRONTEND_API_KEY`
+
+- **`GET /api/products/admin/missing-bgg`**
+
+  - Proxies to **`GET /v1/products/missing-bgg`**
+  - Forwards query params: `limit`, `offset`
+  - Requires `x-admin-api-key: ADMIN_API_KEY` from the browser
+  - Adds header to backend: `x-api-key: FRONTEND_API_KEY`
+
+- **`POST /api/products/admin/:id/bgg`**
+
+  - Proxies to **`POST /v1/products/:id/bgg`**
+  - Requires `x-admin-api-key: ADMIN_API_KEY` from the browser
+  - Adds header to backend: `x-api-key: FRONTEND_API_KEY`
 
 These routes are consumed in the frontend via typed helper functions in `lib/api/products.ts` and React Query hooks in `lib/hooks`.
