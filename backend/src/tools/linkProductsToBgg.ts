@@ -171,8 +171,20 @@ async function main() {
         );
       });
 
-      if (aliasCandidates.length === 1) {
-        const match = aliasCandidates[0];
+      // Prefer an exact normalized-name match to disambiguate cases where
+      // the alias canonical name is more specific than a base game name.
+      const exactAliasMatches = aliasCandidates.filter((c: any) => {
+        const candidateName =
+          (c.primaryName as string) ?? (c.name as string) ?? "";
+        const candNorm = normalizeForMatch(candidateName);
+        return candNorm === aliasNorm;
+      });
+
+      const resolvedCandidates =
+        exactAliasMatches.length === 1 ? exactAliasMatches : aliasCandidates;
+
+      if (resolvedCandidates.length === 1) {
+        const match = resolvedCandidates[0];
         matched += 1;
 
         matchedLog.push({
@@ -200,12 +212,12 @@ async function main() {
         }
 
         continue;
-      } else if (aliasCandidates.length > 1) {
+      } else if (resolvedCandidates.length > 1) {
         ambiguous += 1;
         ambiguousLog.push({
           productId: product.id,
           productName: name,
-          candidates: aliasCandidates.map((c: any) => ({
+          candidates: resolvedCandidates.map((c: any) => ({
             bggId: c.bggId as string,
             primaryName: c.primaryName as string,
             name: (c.name as string | null) ?? null,

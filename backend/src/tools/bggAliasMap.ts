@@ -7,7 +7,20 @@ export function normalizeForMatch(name: string | null | undefined): string {
 
   const lowered = name.toLowerCase();
 
-  return lowered
+  // First pass: strip common generic/marketing suffixes that don't help
+  // distinguish games in the BGG catalog but vary a lot in store data.
+  const cleaned = lowered
+    .replace(/\bboard game(s)?\b/g, " ")
+    .replace(/\bcard game(s)?\b/g, " ")
+    .replace(/\bcore set\b/g, " ")
+    .replace(/\bescape (game|room)\b/g, " ")
+    .replace(/\benglish( language)? version\b/g, " ")
+    .replace(/\bgerman\/english version\b/g, " ")
+    .replace(/\b(deluxe|classic edition)\b/g, " ");
+
+  // Second pass: existing aggressive normalization – strip punctuation,
+  // ordinals, and "edition" markers, then collapse whitespace.
+  return cleaned
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\b(1st|2nd|3rd|[0-9]+th)\b/g, " ")
     .replace(/\b(ed|edition)\b/g, " ")
@@ -259,9 +272,144 @@ export const BGG_ALIAS_MAP: Record<string, string> = {
     "Harry Potter Hogwarts Battle- The Monster Box of Monsters Expansion"
   )]: "Harry Potter: Hogwarts Battle – The Monster Box of Monsters Expansion",
   [normalizeForMatch("Azul: Crystal Mosaic")]: "Azul: Crystal Mosaic",
+  [normalizeForMatch("Ticket To Ride USA 1910 Expansion")]:
+    "Ticket to Ride: USA 1910",
+  [normalizeForMatch("Twilight Imperium 4th Edition")]:
+    "Twilight Imperium: Fourth Edition",
+  [normalizeForMatch("Dominion Allies")]: "Dominion: Allies",
+  [normalizeForMatch("Root: The Marauder Expansion")]:
+    "Root: The Marauder Expansion",
+  [normalizeForMatch("Scythe Modular Board")]: "Scythe: Modular Board",
+  [normalizeForMatch("Scythe: Game Board Extension")]:
+    "Scythe: Game Board Extension",
+  [normalizeForMatch("Spirit Island: Deluxe Invader Board")]:
+    "Spirit Island: Deluxe Invader Board",
+  [normalizeForMatch("Spirit Island: Premium Token Pack")]:
+    "Spirit Island: Premium Token Pack",
+  [normalizeForMatch("Star Wars Rebellion: Rise of the Empire")]:
+    "Star Wars: Rebellion – Rise of the Empire",
+  [normalizeForMatch("Twilight Struggle: Deluxe edition")]: "Twilight Struggle",
+  [normalizeForMatch("Dune: Imperium - Rise of Ix Expansion")]:
+    "Dune: Imperium – Rise of Ix",
   // Ambiguous base games – prefer modern/popular editions
   [normalizeForMatch("Port Royal")]: "Port Royal",
   [normalizeForMatch("Cosmic Encounter")]: "Cosmic Encounter",
   [normalizeForMatch("Decrypto")]: "Decrypto",
   [normalizeForMatch("Paleo")]: "Paleo",
+  // From latest unmatched set
+
+  // Ganz Schon Clever → correct German spelling
+  [normalizeForMatch("Ganz Schon Clever")]: "Ganz schön clever",
+
+  // Marvel Champions hero packs
+  [normalizeForMatch("Marvel Champions: Scarlet Witch Hero Pack")]:
+    "Marvel Champions: The Card Game – Scarlet Witch",
+  [normalizeForMatch("Marvel Champions: Valkyrie Hero Pack")]:
+    "Marvel Champions: The Card Game – Valkyrie",
+
+  // Dixit expansion
+  [normalizeForMatch("Dixit: Anniversary Expansion")]: "Dixit: Anniversary",
+
+  // EXIT / EXiT titles
+  [normalizeForMatch("EXiT: The Return to the Abandoned Cabin")]:
+    "EXIT: The Game – The Return to the Abandoned Cabin",
+  [normalizeForMatch("EXiT - The Mysterious Museum")]:
+    "EXIT: The Game – The Mysterious Museum",
+  [normalizeForMatch("EXiT - Dead Man on the Orient Express")]:
+    "EXIT: The Game – Dead Man on the Orient Express",
+  [normalizeForMatch("EXIT Puzzle: Nightfall Manor")]:
+    "EXIT Puzzle: Nightfall Manor",
+  [normalizeForMatch("EXIT: The Game - The Pharaoh's Tomb")]:
+    "EXIT: The Game – The Pharaoh's Tomb",
+  [normalizeForMatch("EXIT: The Enchanted Forest")]:
+    "EXIT: The Game – The Enchanted Forest",
+  [normalizeForMatch("Exit: Kidnapped in Fortune City")]:
+    "EXIT: The Game – Kidnapped in Fortune City",
+  [normalizeForMatch("Exit: The Gate Between Worlds")]:
+    "EXIT: The Game – The Gate Between Worlds",
+
+  // Minecraft
+  [normalizeForMatch("Minecraft Builders and Biomes Board Game")]:
+    "Minecraft: Builders & Biomes",
+
+  // LotR / Arkham / Spirit Island expansions
+  [normalizeForMatch(
+    "The Lord of the Rings: Journeys in Middle-Earth - Shadowed Paths Expansion"
+  )]: "The Lord of the Rings: Journeys in Middle-earth – Shadowed Paths",
+  [normalizeForMatch(
+    "Arkham Horror LCG: Carnevale of Horrors Scenario Pack Expansion"
+  )]: "Arkham Horror: The Card Game – Carnevale of Horrors",
+  [normalizeForMatch("Jagged Earth: Spirit Island expansion")]:
+    "Spirit Island: Jagged Earth",
+
+  // Champions of Midgard, GAH, etc.
+  [normalizeForMatch("Valhalla: Champions of Midgard Exp")]:
+    "Champions of Midgard: Valhalla",
+  [normalizeForMatch("Grand Austria Hotel: Let's Waltz")]:
+    "Grand Austria Hotel: Let's Waltz!",
+
+  // Coup, Mysterium, Obsession, etc.
+  [normalizeForMatch("Coup 2nd Edition: Reformation Expansion")]:
+    "Coup: Reformation",
+  [normalizeForMatch("Hidden Signs: Mysterium Expansion 1")]:
+    "Mysterium: Hidden Signs",
+
+  // Memoir '44 extras
+  [normalizeForMatch("Memoir '44 Battle Map 1 Hedgerow Hell")]:
+    "Memoir '44: Battle Map Volume 1 – Hedgerow Hell",
+
+  // 6 nimmt! / Heckmeck
+  [normalizeForMatch("6 Nimmt!")]: "6 nimmt!",
+  [normalizeForMatch("Heckmeck Am Bratwurmeck (English Language Version)")]:
+    "Heckmeck am Bratwurmeck",
+
+  // Nova Luna variant
+  [normalizeForMatch("Nova Luna (German/English Version)")]: "Nova Luna",
+
+  // Additional aliases from latest unmatched set
+  [normalizeForMatch("5211: Azul Special Edition")]:
+    "5211: Azul Special Edition",
+  [normalizeForMatch("The Isle of Cats Expansion: Kittens + Beasts")]:
+    "The Isle of Cats: Kittens + Beasts",
+  [normalizeForMatch(
+    "Mansions of Madness 2nd Edition: Sanctum of Twilight Expansion"
+  )]: "Mansions of Madness: Second Edition – Sanctum of Twilight",
+  [normalizeForMatch("Scythe: The Rise of Fenris")]:
+    "Scythe: The Rise of Fenris",
+  [normalizeForMatch("Destinies: Sea of Sand")]: "Destinies: Sea of Sand",
+  [normalizeForMatch("Breakthrough Kit for Memoir '44")]:
+    "Memoir '44: Breakthrough Kit",
+  [normalizeForMatch("Undaunted: Reinforcements - Revised Edition")]:
+    "Undaunted: Reinforcements",
+  [normalizeForMatch("Agricola: Farmers of the Moor (Revised Edition)")]:
+    "Agricola: Farmers of the Moor (Revised Edition)",
+  [normalizeForMatch("Unlock 7! Epic Adventures")]: "Unlock!: Epic Adventures",
+  [normalizeForMatch(
+    "Mansions of Madness 2nd Edition: Beyond the Threshold Expansion"
+  )]: "Mansions of Madness: Second Edition – Beyond the Threshold",
+  [normalizeForMatch(
+    "Murder at the Excelsior Hotel Arkham Horror LCG Expansion"
+  )]: "Arkham Horror: The Card Game – Murder at the Excelsior Hotel",
+  [normalizeForMatch("Boggle Classic")]: "Boggle",
+  [normalizeForMatch("Rummikub Travel")]: "Rummikub",
+  [normalizeForMatch("Sub Terra: Investigation")]: "Sub Terra: Investigation",
+  [normalizeForMatch("Tiny Epic Dungeons Stories Expansion")]:
+    "Tiny Epic Dungeons: Stories",
+  [normalizeForMatch("The Great American Mail Race")]:
+    "The Great American Mail Race",
+  [normalizeForMatch("Game of Thrones The Board Game (2nd Ed)")]:
+    "A Game of Thrones: The Board Game (Second Edition)",
+  [normalizeForMatch("Concordia: Aegyptus/Creta Expansion")]:
+    "Concordia: Aegyptus / Creta",
+  [normalizeForMatch("Star Wars: Outer Rim - Unfinished Business Expansion")]:
+    "Star Wars: Outer Rim – Unfinished Business",
+  [normalizeForMatch("Flash Point Fire Rescue 2nd Edition")]:
+    "Flash Point: Fire Rescue",
+  [normalizeForMatch("Twilight Imperium: Prophecy of Kings Expansion")]:
+    "Twilight Imperium: Prophecy of Kings",
+  [normalizeForMatch("EXiT: Advent Calendar - Hunt for the Golden Book")]:
+    "EXIT Advent Calendar: The Hunt for the Golden Book",
+  [normalizeForMatch("Here to Slay: Warriors & Druids Expansion")]:
+    "Here to Slay: Warriors & Druids Expansion Pack",
+  [normalizeForMatch("Dixit Expansion 5: Daydream")]: "Dixit: Daydreams",
 };
