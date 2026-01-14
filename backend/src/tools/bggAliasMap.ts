@@ -412,4 +412,31 @@ export const BGG_ALIAS_MAP: Record<string, string> = {
   [normalizeForMatch("Here to Slay: Warriors & Druids Expansion")]:
     "Here to Slay: Warriors & Druids Expansion Pack",
   [normalizeForMatch("Dixit Expansion 5: Daydream")]: "Dixit: Daydreams",
+
+  // Further aliases from latest unmatched set
+  [normalizeForMatch("Dominion Seaside 2nd Edition Update Pack")]:
+    "Dominion: Seaside (Second Edition) – Update Pack",
+  [normalizeForMatch("Lords of Middle Earth: War of The Ring")]:
+    "War of the Ring: Lords of Middle-earth",
+  [normalizeForMatch("Chronicles of Crime: NOIR")]: "Chronicles of Crime: Noir",
+  [normalizeForMatch("Ticket to Ride India: Map Collection")]:
+    "Ticket to Ride Map Collection: Volume 2 – India & Switzerland",
+  [normalizeForMatch("Warhammer Fantasy Roleplay Fourth Edition Starter Set")]:
+    "Warhammer Fantasy Roleplay (Fourth Edition) Starter Set",
+  [normalizeForMatch("Rat-A-Tat-Cat")]: "Rat-a-Tat Cat",
+  [normalizeForMatch("Betrayal at House on the Hill Upgrade Kit")]:
+    "Betrayal at House on the Hill: Upgrade Kit",
+  [normalizeForMatch("Sub Terra: Annihilation")]: "Sub Terra: Annihilation",
+  [normalizeForMatch("Concept Boardgame")]: "Concept",
+  [normalizeForMatch("Machi Koro 5th Anniversary Edition")]:
+    "Machi Koro 5th Anniversary Edition",
+  [normalizeForMatch("Lux & Tenebrae: Res Arcana Expansion")]:
+    "Res Arcana: Lux et Tenebrae",
+  [normalizeForMatch("EXiT - The Sinister Mansion")]:
+    "EXIT: The Game – The Sinister Mansion",
+  [normalizeForMatch("Decorum")]: "Decorum",
+  [normalizeForMatch("Summoner Wars: Cloaks")]:
+    "Summoner Wars (Second Edition): Cloaks",
+  [normalizeForMatch("Sequence Classic")]: "Sequence",
+  [normalizeForMatch("Connect 4 Grid")]: "Connect 4",
 };

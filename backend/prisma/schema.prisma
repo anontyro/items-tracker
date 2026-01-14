@@ -12,7 +12,7 @@ model Product {
   name          String
   type          String          @default("board-game")
   // Optional BoardGameGeek ID for cross-site canonical mapping
-  bggId         String?         @unique
+  bggId         String?         
   bggCanonicalName String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -24,6 +24,7 @@ model Product {
 
   @@index([name])
   @@index([type])
+  @@index([bggId])
 }
 
 model ProductSource {
