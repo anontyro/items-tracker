@@ -7,11 +7,11 @@ function getBackendBaseUrl() {
 
 export async function GET(
   _request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> },
 ) {
   const backendBase = getBackendBaseUrl();
   const apiKey = process.env.FRONTEND_API_KEY || "";
-  const id = context.params.id;
+  const { id } = await context.params;
 
   const backendUrl = `${backendBase}/v1/products/${encodeURIComponent(id)}`;
 

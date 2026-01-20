@@ -37,6 +37,15 @@ export interface ProductHistoryResponse {
   items: PriceHistoryPoint[];
 }
 
+const getBaseUrl = () => {
+  const baseUrl =
+    typeof window === "undefined"
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : window.location.origin;
+
+  return baseUrl;
+};
+
 export async function fetchProducts(options: {
   q?: string;
   limit?: number;
@@ -44,12 +53,14 @@ export async function fetchProducts(options: {
 }): Promise<ProductSearchResponse> {
   const { q = "", limit = 50, offset = 0 } = options;
 
-  const url = new URL("/api/products", window.location.origin);
+  const url = new URL("/api/products", getBaseUrl());
   if (q) {
     url.searchParams.set("q", q);
   }
   url.searchParams.set("limit", String(limit));
   url.searchParams.set("offset", String(offset));
+
+  console.log("url is", url.toString());
 
   const res = await fetch(url.toString(), {
     method: "GET",
@@ -63,10 +74,9 @@ export async function fetchProducts(options: {
 }
 
 export async function fetchProductDetail(id: string): Promise<ProductDetail> {
-  const url = new URL(
-    `/api/products/${encodeURIComponent(id)}`,
-    window.location.origin
-  );
+  const url = new URL(`/api/products/${encodeURIComponent(id)}`, getBaseUrl());
+
+  console.log("url is", url.toString());
 
   const res = await fetch(url.toString(), {
     method: "GET",
@@ -87,7 +97,7 @@ export async function fetchProductHistory(options: {
 
   const url = new URL(
     `/api/products/${encodeURIComponent(productId)}/history`,
-    window.location.origin
+    getBaseUrl(),
   );
 
   url.searchParams.set("limit", String(limit));
@@ -110,10 +120,7 @@ export async function fetchProductsMissingBgg(options: {
 }): Promise<ProductSearchResponse> {
   const { limit = 50, offset = 0, adminApiKey } = options;
 
-  const url = new URL(
-    "/api/products/admin/missing-bgg",
-    window.location.origin
-  );
+  const url = new URL("/api/products/admin/missing-bgg", getBaseUrl());
 
   url.searchParams.set("limit", String(limit));
   url.searchParams.set("offset", String(offset));
@@ -142,7 +149,7 @@ export async function updateProductBggId(options: {
 
   const url = new URL(
     `/api/products/admin/${encodeURIComponent(productId)}/bgg`,
-    window.location.origin
+    getBaseUrl(),
   );
 
   const res = await fetch(url.toString(), {

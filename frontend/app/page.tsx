@@ -3,6 +3,7 @@
 import { Button, List, ListItem, ListItemText } from "@mui/material";
 import { Container, Stack, Typography } from "@mui/material";
 
+import Link from "next/link";
 import type { ProductSummary } from "../lib/api/products";
 import { useProductSearch } from "../lib/hooks/useProductSearch";
 import { useState } from "react";
@@ -47,6 +48,12 @@ export default function HomePage() {
                     primary={product.name}
                     secondary={product.type}
                   />
+                  <Button
+                    component={Link}
+                    href={`/items/zatu-uk/${product.id}`}
+                  >
+                    View Details
+                  </Button>
                 </ListItem>
               ))}
             </List>

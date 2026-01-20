@@ -31,7 +31,7 @@ export class ProductsController {
     @Headers("x-api-key") apiKey: string | undefined,
     @Query("q") q?: string,
     @Query("limit") limitRaw?: string,
-    @Query("offset") offsetRaw?: string
+    @Query("offset") offsetRaw?: string,
   ) {
     this.assertApiKey(apiKey);
 
@@ -69,7 +69,7 @@ export class ProductsController {
   async getProductsMissingBgg(
     @Headers("x-api-key") apiKey: string | undefined,
     @Query("limit") limitRaw?: string,
-    @Query("offset") offsetRaw?: string
+    @Query("offset") offsetRaw?: string,
   ) {
     this.assertApiKey(apiKey);
 
@@ -92,7 +92,7 @@ export class ProductsController {
 
     this.logger.log(
       { limit, offset, total },
-      "Products missing BGG ID search executed"
+      "Products missing BGG ID search executed",
     );
 
     return {
@@ -104,7 +104,7 @@ export class ProductsController {
   @Get(":id")
   async getProductById(
     @Headers("x-api-key") apiKey: string | undefined,
-    @Param("id") id: string
+    @Param("id") id: string,
   ) {
     this.assertApiKey(apiKey);
 
@@ -116,6 +116,8 @@ export class ProductsController {
         },
       },
     });
+    console.log("id is", id);
+    console.log("product is", product);
 
     if (!product) {
       throw new NotFoundException("Product not found");
@@ -128,7 +130,7 @@ export class ProductsController {
   async getProductHistory(
     @Headers("x-api-key") apiKey: string | undefined,
     @Param("id") id: string,
-    @Query("limit") limitRaw?: string
+    @Query("limit") limitRaw?: string,
   ) {
     this.assertApiKey(apiKey);
 
@@ -151,7 +153,7 @@ export class ProductsController {
     body: {
       bggId?: string | null;
       bggCanonicalName?: string | null;
-    }
+    },
   ) {
     this.assertApiKey(apiKey);
 

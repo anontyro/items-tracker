@@ -7,17 +7,17 @@ function getBackendBaseUrl() {
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { searchParams } = new URL(request.url);
   const limit = searchParams.get("limit") ?? "365";
 
   const backendBase = getBackendBaseUrl();
   const apiKey = process.env.FRONTEND_API_KEY || "";
-  const id = context.params.id;
+  const { id } = await context.params;
 
   const backendUrl = `${backendBase}/v1/products/${encodeURIComponent(
-    id
+    id,
   )}/history?limit=${encodeURIComponent(limit)}`;
 
   const res = await fetch(backendUrl, {
