@@ -1,6 +1,13 @@
 "use client";
 
-import { Button, List, ListItem, ListItemText } from "@mui/material";
+import {
+  Avatar,
+  Button,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+} from "@mui/material";
 import { Container, Stack, Typography } from "@mui/material";
 
 import Link from "next/link";
@@ -41,19 +48,48 @@ export default function HomePage() {
               Showing {items.length} of {total} products (page offset {offset})
             </Typography>
 
-            <List dense>
+            <List
+              dense
+              sx={{
+                width: "100%",
+                bgcolor: "background.default",
+              }}
+            >
               {items.map((product: ProductSummary) => (
-                <ListItem key={product.id} disableGutters>
+                <ListItem
+                  key={product.id}
+                  disableGutters
+                  sx={{
+                    mb: 1,
+                    px: 2,
+                    py: 1.5,
+                    borderRadius: 1,
+                    bgcolor: "background.paper",
+                    boxShadow: 1,
+                  }}
+                  secondaryAction={
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      component={Link}
+                      href={`/items/zatu-uk/${product.id}`}
+                    >
+                      View details
+                    </Button>
+                  }
+                >
+                  <ListItemAvatar>
+                    <Avatar
+                      variant="rounded"
+                      sx={{ width: 56, height: 56, mr: 2 }}
+                    >
+                      {product.name.charAt(0)}
+                    </Avatar>
+                  </ListItemAvatar>
                   <ListItemText
                     primary={product.name}
                     secondary={product.type}
                   />
-                  <Button
-                    component={Link}
-                    href={`/items/zatu-uk/${product.id}`}
-                  >
-                    View Details
-                  </Button>
                 </ListItem>
               ))}
             </List>
