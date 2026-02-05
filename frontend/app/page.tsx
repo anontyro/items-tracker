@@ -7,6 +7,7 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
+  TextField,
 } from "@mui/material";
 import { Container, Stack, Typography } from "@mui/material";
 
@@ -16,11 +17,12 @@ import { useProductSearch } from "../lib/hooks/useProductSearch";
 import { useState } from "react";
 
 export default function HomePage() {
+  const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 50;
 
   const { data, isLoading, isError, error, isFetching } = useProductSearch({
-    q: "",
+    q: search,
     limit,
     offset,
   });
@@ -34,6 +36,18 @@ export default function HomePage() {
         <Typography variant="h3" component="h1">
           Board Game Price Tracker
         </Typography>
+
+        <TextField
+          size="small"
+          label="Search by name"
+          variant="outlined"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setOffset(0);
+          }}
+          fullWidth
+        />
 
         {isLoading && <Typography>Loading products...</Typography>}
         {isError && (
