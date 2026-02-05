@@ -17,11 +17,17 @@ import type { ProductSummary } from "../lib/api/products";
 import Watchlist from "../components/watchlist/Watchlist";
 import { useProductSearch } from "../lib/hooks/useProductSearch";
 
+type WatchlistItem = {
+  id: string;
+  name: string;
+};
+
 export default function HomePage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
-  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+  const [hasLoadedWatchlist, setHasLoadedWatchlist] = useState(false);
   const limit = 50;
 
   useEffect(() => {
@@ -40,24 +46,55 @@ export default function HomePage() {
       try {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          setWatchlist(parsed);
+          if (parsed.length > 0 && typeof parsed[0] === "string") {
+            const items = (parsed as string[]).map((id) => ({
+              id,
+              name: id,
+            }));
+            setWatchlist(items);
+          } else {
+            const items = parsed
+              .filter((value: any) => value && typeof value.id === "string")
+              .map((value: any) => ({
+                id: value.id as string,
+                name:
+                  typeof value.name === "string" && value.name.trim()
+                    ? (value.name as string)
+                    : (value.id as string),
+              }));
+            setWatchlist(items);
+          }
         }
       } catch {
         // Ignore invalid JSON
       }
     }
+
+    setHasLoadedWatchlist(true);
   }, []);
 
   useEffect(() => {
+    if (!hasLoadedWatchlist) {
+      return;
+    }
     window.localStorage.setItem("watchlist", JSON.stringify(watchlist));
-  }, [watchlist]);
+  }, [watchlist, hasLoadedWatchlist]);
 
-  const toggleWatchlist = (productId: string) => {
-    setWatchlist((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId],
-    );
+  const toggleWatchlist = (product: ProductSummary) => {
+    setWatchlist((prev) => {
+      const exists = prev.some((item) => item.id === product.id);
+      if (exists) {
+        return prev.filter((item) => item.id !== product.id);
+      }
+
+      return [
+        ...prev,
+        {
+          id: product.id,
+          name: product.name,
+        },
+      ];
+    });
   };
 
   const { data, isLoading, isError, error, isFetching } = useProductSearch({
@@ -69,14 +106,6 @@ export default function HomePage() {
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
 
-  const productsById = items.reduce<Record<string, ProductSummary>>(
-    (acc: Record<string, ProductSummary>, product: ProductSummary) => {
-      acc[product.id] = product;
-      return acc;
-    },
-    {},
-  );
-
   return (
     <Container maxWidth="lg">
       <Stack spacing={2} sx={{ py: 4 }}>
@@ -84,7 +113,7 @@ export default function HomePage() {
           Board Game Price Tracker
         </Typography>
 
-        <Watchlist productIds={watchlist} productsById={productsById} />
+        <Watchlist items={watchlist} />
 
         <TextField
           size="small"
@@ -119,7 +148,9 @@ export default function HomePage() {
               }}
             >
               {items.map((product: ProductSummary) => {
-                const isWatched = watchlist.includes(product.id);
+                const isWatched = watchlist.some(
+                  (item) => item.id === product.id,
+                );
 
                 return (
                   <ListItem
@@ -138,7 +169,7 @@ export default function HomePage() {
                         <Button
                           variant={isWatched ? "contained" : "outlined"}
                           size="small"
-                          onClick={() => toggleWatchlist(product.id)}
+                          onClick={() => toggleWatchlist(product)}
                         >
                           {isWatched
                             ? "Remove from watchlist"

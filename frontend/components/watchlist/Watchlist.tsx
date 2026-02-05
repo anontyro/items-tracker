@@ -1,14 +1,18 @@
 "use client";
 
 import { Card, CardContent, Grid, Stack, Typography } from "@mui/material";
-import type { PriceHistoryPoint, ProductSummary } from "../../lib/api/products";
 
 import Link from "next/link";
+import type { PriceHistoryPoint } from "../../lib/api/products";
 import { useProductHistory } from "../../lib/hooks/useProductHistory";
 
+type WatchlistItem = {
+  id: string;
+  name: string;
+};
+
 interface WatchlistProps {
-  productIds: string[];
-  productsById: Record<string, ProductSummary | undefined>;
+  items: WatchlistItem[];
 }
 
 interface SparklineProps {
@@ -92,14 +96,8 @@ function PriceTrend({ history }: { history: PriceHistoryPoint[] }) {
   return null;
 }
 
-function WatchlistCard({
-  productId,
-  product,
-}: {
-  productId: string;
-  product?: ProductSummary;
-}) {
-  const { data, isLoading } = useProductHistory({ productId, limit: 30 });
+function WatchlistCard({ item }: { item: WatchlistItem }) {
+  const { data } = useProductHistory({ productId: item.id, limit: 30 });
 
   const history = (data?.items ?? [])
     .slice()
@@ -115,7 +113,7 @@ function WatchlistCard({
             variant="subtitle1"
             noWrap
             component={Link}
-            href={`/items/zatu-uk/${productId}`}
+            href={`/items/zatu-uk/${item.id}`}
             sx={{
               textDecoration: "none",
               color: "primary.main",
@@ -124,7 +122,7 @@ function WatchlistCard({
               },
             }}
           >
-            {product?.name ?? productId}
+            {item.name}
           </Typography>
 
           {latest && (
@@ -142,10 +140,12 @@ function WatchlistCard({
   );
 }
 
-const Watchlist: React.FC<WatchlistProps> = ({ productIds, productsById }) => {
-  const uniqueIds = Array.from(new Set(productIds));
+const Watchlist: React.FC<WatchlistProps> = ({ items }) => {
+  const uniqueItems = Array.from(
+    new Map(items.map((item) => [item.id, item])).values(),
+  );
 
-  if (!uniqueIds.length) {
+  if (!uniqueItems.length) {
     return null;
   }
 
@@ -153,9 +153,9 @@ const Watchlist: React.FC<WatchlistProps> = ({ productIds, productsById }) => {
     <Stack spacing={1}>
       <Typography variant="h6">Watchlist</Typography>
       <Grid container spacing={2}>
-        {uniqueIds.map((id) => (
-          <Grid key={id} item xs={12} sm={6} md={4} lg={3}>
-            <WatchlistCard productId={id} product={productsById[id]} />
+        {uniqueItems.map((item) => (
+          <Grid key={item.id} item xs={12} sm={6} md={4} lg={3}>
+            <WatchlistCard item={item} />
           </Grid>
         ))}
       </Grid>
