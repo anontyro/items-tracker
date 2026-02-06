@@ -17,6 +17,65 @@ import { useEffect, useState } from "react";
 import ItemHistory from "../ItemHistory/ItemHistory";
 import type { ProductDetail } from "../../../lib/api/products";
 
+type DetailTabProps = {
+  product: ProductDetail;
+};
+
+const DetailTab: React.FC<DetailTabProps> = ({ product }) => {
+  return (
+    <Box>
+      <Typography variant="subtitle1" gutterBottom>
+        Details
+      </Typography>
+      <Stack spacing={0.5}>
+        <Typography variant="body2" color="text.secondary">
+          Product ID: {product.id}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Type: {product.type}
+        </Typography>
+        {product.bggId && (
+          <Typography variant="body2" color="text.secondary">
+            BGG ID: {product.bggId}
+          </Typography>
+        )}
+        <Typography variant="body2" color="text.secondary">
+          Created at: {new Date(product.createdAt).toLocaleString()}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Updated at: {new Date(product.updatedAt).toLocaleString()}
+        </Typography>
+      </Stack>
+
+      {product.sources && product.sources.length > 0 && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Sources
+          </Typography>
+          <Stack spacing={1}>
+            {product.sources.map((source) => (
+              <Box key={source.id}>
+                <Typography variant="body2" color="text.secondary">
+                  <a
+                    href={source.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {source.sourceName}
+                  </a>
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  SKU: {source.sku}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 type WatchlistItem = {
   id: string;
   name: string;
@@ -168,27 +227,7 @@ const ItemDetails: React.FC<{ product: ProductDetail; productId: string }> = ({
           <Tab label="Pricing history" />
         </Tabs>
         <CardContent>
-          {tab === 0 && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>
-                Details
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Product ID: {product.id}
-              </Typography>
-              {product.bggId && (
-                <Typography variant="body2" color="text.secondary">
-                  BGG ID: {product.bggId}
-                </Typography>
-              )}
-              <Typography variant="body2" color="text.secondary">
-                Created at: {new Date(product.createdAt).toLocaleString()}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Updated at: {new Date(product.updatedAt).toLocaleString()}
-              </Typography>
-            </Box>
-          )}
+          {tab === 0 && <DetailTab product={product} />}
 
           {tab === 1 && (
             <Box>
