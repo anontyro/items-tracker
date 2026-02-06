@@ -10,7 +10,7 @@ import {
   TextField,
 } from "@mui/material";
 import { Container, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
 import type { ProductSummary } from "../lib/api/products";
@@ -26,9 +26,12 @@ export default function HomePage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
+  const [items, setItems] = useState<ProductSummary[]>([]);
+  const [total, setTotal] = useState(0);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [hasLoadedWatchlist, setHasLoadedWatchlist] = useState(false);
   const limit = 50;
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -103,8 +106,59 @@ export default function HomePage() {
     offset,
   });
 
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+
+    setTotal(data.total);
+
+    if (offset === 0) {
+      setItems(data.items);
+      return;
+    }
+
+    setItems((prev) => {
+      const existingIds = new Set(prev.map((item) => item.id));
+      const merged: ProductSummary[] = [...prev];
+      for (const item of data.items) {
+        if (!existingIds.has(item.id)) {
+          merged.push(item);
+        }
+      }
+      return merged;
+    });
+  }, [data, offset]);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) {
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (!entry.isIntersecting) {
+        return;
+      }
+
+      if (isLoading || isFetching || isError) {
+        return;
+      }
+
+      if (items.length === 0 || items.length >= total) {
+        return;
+      }
+
+      setOffset((prev) => prev + limit);
+    });
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isLoading, isFetching, isError, items.length, total, limit]);
 
   return (
     <Container maxWidth="lg">
@@ -202,14 +256,7 @@ export default function HomePage() {
                 );
               })}
             </List>
-
-            <Button
-              variant="outlined"
-              disabled={items.length === 0 || items.length + offset >= total}
-              onClick={() => setOffset((prev) => prev + limit)}
-            >
-              {isFetching ? "Loading..." : "Load more"}
-            </Button>
+            <div ref={sentinelRef} />
           </>
         )}
       </Stack>
