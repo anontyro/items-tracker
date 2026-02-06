@@ -113,10 +113,8 @@ const ItemDetails: React.FC<{
   const [isWatched, setIsWatched] = useState(false);
 
   const historyItems = productHistory?.items ?? [];
-  const latestPoint =
-    historyItems.length > 0 ? historyItems[historyItems.length - 1] : undefined;
-  const previousPoint =
-    historyItems.length > 1 ? historyItems[historyItems.length - 2] : undefined;
+  const latestPoint = historyItems.length > 0 ? historyItems[0] : undefined;
+  const previousPoint = historyItems.length > 1 ? historyItems[1] : undefined;
 
   let currentPriceLabel = "Price: Unknown";
   let priceTrendSymbol = "−";
