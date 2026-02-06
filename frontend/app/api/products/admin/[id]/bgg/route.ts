@@ -7,7 +7,7 @@ function getBackendBaseUrl() {
 
 export async function POST(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> },
 ) {
   const adminKey = request.headers.get("x-admin-api-key");
   const expectedAdminKey = process.env.ADMIN_API_KEY;
@@ -18,7 +18,7 @@ export async function POST(
 
   const backendBase = getBackendBaseUrl();
   const apiKey = process.env.FRONTEND_API_KEY || "";
-  const id = context.params.id;
+  const { id } = await context.params;
 
   const backendUrl = `${backendBase}/v1/products/${encodeURIComponent(id)}/bgg`;
 

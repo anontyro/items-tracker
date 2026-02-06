@@ -1,6 +1,10 @@
 "use client";
 
-import { ProductSearchResponse, fetchProducts } from "../api/products";
+import {
+  ProductSearchResponse,
+  ProductSummary,
+  fetchProducts,
+} from "../api/products";
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -16,6 +20,5 @@ export function useProductSearch(params: UseProductSearchParams) {
   return useQuery<ProductSearchResponse, Error>({
     queryKey: ["products", { q, limit, offset }],
     queryFn: () => fetchProducts({ q, limit, offset }),
-    keepPreviousData: true,
   });
 }
