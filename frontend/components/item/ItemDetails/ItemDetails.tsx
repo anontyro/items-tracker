@@ -185,7 +185,12 @@ const ItemDetails: React.FC<{
   return (
     <Box>
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4,
+          }}
+        >
           <Box
             sx={{
               width: "100%",
@@ -196,9 +201,10 @@ const ItemDetails: React.FC<{
           />
         </Grid>
         <Grid
-          item
-          xs={12}
-          md={8}
+          size={{
+            xs: 12,
+            md: 8,
+          }}
           sx={{
             display: "flex",
             flexDirection: "column",
