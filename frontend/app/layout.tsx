@@ -1,3 +1,4 @@
+import AppShell from "../components/layout/AppShell";
 import { AppThemeProvider } from "../theme";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <AppThemeProvider>{children}</AppThemeProvider>
+        <AppThemeProvider>
+          <AppShell>{children}</AppShell>
+        </AppThemeProvider>
       </body>
     </html>
   );
