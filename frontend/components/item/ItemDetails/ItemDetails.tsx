@@ -154,6 +154,96 @@ const ItemDetails: React.FC<{
     availabilityLabel = "Out of stock";
   }
 
+  const sortedHistory = [...historyItems].sort((a, b) =>
+    a.scrapedAt.localeCompare(b.scrapedAt),
+  );
+
+  const numericPoints = sortedHistory
+    .map((point) => ({
+      ...point,
+      priceValue: parseFloat(point.price),
+    }))
+    .filter((point) => Number.isFinite(point.priceValue));
+
+  let cheapestPriceLabel = "Cheapest price: Unknown";
+  let highestPriceLabel = "Highest price: Unknown";
+  let bestPurchaseLabel = "Best purchase date: Unknown";
+  let outOfStockPercentLabel = "Time out of stock: Unknown";
+  let restockGapLabel = "Average time between restocks: Unknown";
+
+  if (numericPoints.length > 0) {
+    const cheapest = numericPoints.reduce((min, p) =>
+      p.priceValue < min.priceValue ? p : min,
+    );
+    const highest = numericPoints.reduce((max, p) =>
+      p.priceValue > max.priceValue ? p : max,
+    );
+
+    cheapestPriceLabel = `Cheapest price: £${cheapest.priceValue.toFixed(
+      2,
+    )} on ${formatDate(cheapest.scrapedAt)}`;
+    highestPriceLabel = `Highest price: £${highest.priceValue.toFixed(
+      2,
+    )} on ${formatDate(highest.scrapedAt)}`;
+
+    const inStockCheapestCandidates = numericPoints.filter(
+      (p) => p.availability === true,
+    );
+    const bestPoint =
+      inStockCheapestCandidates.length > 0
+        ? inStockCheapestCandidates.reduce((min, p) =>
+            p.priceValue < min.priceValue ? p : min,
+          )
+        : cheapest;
+
+    bestPurchaseLabel = `Best date to have purchased: £${bestPoint.priceValue.toFixed(
+      2,
+    )} on ${formatDate(bestPoint.scrapedAt)}${
+      bestPoint.availability === true ? " (in stock)" : ""
+    }`;
+
+    const availabilityPoints = sortedHistory.filter(
+      (p) => p.availability !== null,
+    );
+    if (availabilityPoints.length > 0) {
+      const outOfStockCount = availabilityPoints.filter(
+        (p) => p.availability === false,
+      ).length;
+      const percent = (outOfStockCount / availabilityPoints.length) * 100;
+      outOfStockPercentLabel = `Time out of stock: ${percent.toFixed(1)}% of observations`;
+    }
+
+    const restockDates: Date[] = [];
+    for (let i = 0; i < sortedHistory.length; i += 1) {
+      const point = sortedHistory[i];
+      const prev = sortedHistory[i - 1];
+      if (
+        point.availability === true &&
+        (!prev || prev.availability === false)
+      ) {
+        restockDates.push(new Date(point.scrapedAt));
+      }
+    }
+
+    if (restockDates.length >= 2) {
+      let totalMs = 0;
+      let count = 0;
+      for (let i = 1; i < restockDates.length; i += 1) {
+        const diff = restockDates[i].getTime() - restockDates[i - 1].getTime();
+        if (diff > 0) {
+          totalMs += diff;
+          count += 1;
+        }
+      }
+      if (count > 0) {
+        const avgDays = totalMs / count / (1000 * 60 * 60 * 24);
+        restockGapLabel = `Average time between restocks: ${avgDays.toFixed(
+          1,
+        )} days`;
+      }
+    }
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -325,6 +415,7 @@ const ItemDetails: React.FC<{
         <Tabs value={tab} onChange={(_event, newValue) => setTab(newValue)}>
           <Tab label="Details" />
           <Tab label="Pricing history" />
+          <Tab label="Statistics" />
         </Tabs>
         <CardContent>
           {tab === 0 && <DetailTab product={product} />}
@@ -332,6 +423,31 @@ const ItemDetails: React.FC<{
           {tab === 1 && (
             <Box>
               <ItemHistory id={productId} />
+            </Box>
+          )}
+
+          {tab === 2 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Statistics
+              </Typography>
+              <Stack spacing={1.5}>
+                <Typography variant="body2" color="text.secondary">
+                  {cheapestPriceLabel}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {highestPriceLabel}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {bestPurchaseLabel}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {restockGapLabel}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {outOfStockPercentLabel}
+                </Typography>
+              </Stack>
             </Box>
           )}
         </CardContent>
