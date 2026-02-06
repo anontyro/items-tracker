@@ -1,10 +1,5 @@
-import { Box, Typography } from "@mui/material";
-import {
-  fetchProductDetail,
-  fetchProductHistory,
-} from "../../../../lib/api/products";
-
-import ItemHistory from "../../../../components/item/ItemHistory/ItemHistory";
+import ItemDetails from "../../../../components/item/ItemDetails/ItemDetails";
+import { fetchProductDetail } from "../../../../lib/api/products";
 
 const ZatuItemDetails = async ({
   params,
@@ -17,14 +12,7 @@ const ZatuItemDetails = async ({
 
   console.log("productDetails is", productDetails);
 
-  return (
-    <Box>
-      <Typography variant="h1">
-        Zatu Item Details for {productDetails.name}
-      </Typography>
-      <ItemHistory id={itemId} />
-    </Box>
-  );
+  return <ItemDetails product={productDetails} productId={itemId} />;
 };
 
 export default ZatuItemDetails;
