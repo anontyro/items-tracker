@@ -112,6 +112,50 @@ const ItemDetails: React.FC<{
   const [tab, setTab] = useState(0);
   const [isWatched, setIsWatched] = useState(false);
 
+  const historyItems = productHistory?.items ?? [];
+  const latestPoint =
+    historyItems.length > 0 ? historyItems[historyItems.length - 1] : undefined;
+  const previousPoint =
+    historyItems.length > 1 ? historyItems[historyItems.length - 2] : undefined;
+
+  let currentPriceLabel = "Price: Unknown";
+  let priceTrendSymbol = "−";
+  let priceTrendColor: string = "text.disabled";
+
+  if (latestPoint) {
+    const latestPrice = parseFloat(latestPoint.price);
+    const formattedPrice = Number.isFinite(latestPrice)
+      ? `£${latestPrice.toFixed(2)}`
+      : latestPoint.price;
+
+    currentPriceLabel = `Price: ${formattedPrice}`;
+
+    if (previousPoint) {
+      const previousPrice = parseFloat(previousPoint.price);
+      if (Number.isFinite(previousPrice) && Number.isFinite(latestPrice)) {
+        if (latestPrice > previousPrice) {
+          priceTrendSymbol = "↑";
+          priceTrendColor = "success.main";
+        } else if (latestPrice < previousPrice) {
+          priceTrendSymbol = "↓";
+          priceTrendColor = "error.main";
+        }
+      }
+    }
+  }
+
+  const availabilityStatus = latestPoint?.availability;
+  let availabilityColor: string = "text.disabled";
+  let availabilityLabel = "Availability unknown";
+
+  if (availabilityStatus === true) {
+    availabilityColor = "success.main";
+    availabilityLabel = "In stock";
+  } else if (availabilityStatus === false) {
+    availabilityColor = "error.main";
+    availabilityLabel = "Out of stock";
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -212,12 +256,6 @@ const ItemDetails: React.FC<{
           }}
         >
           <Stack spacing={0.5} alignItems="flex-start">
-            <Typography variant="body1" color="text.secondary">
-              Type: {product.type}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              First seen: {formatDate(product.createdAt)}
-            </Typography>
             <Stack
               direction="row"
               spacing={1}
@@ -227,6 +265,7 @@ const ItemDetails: React.FC<{
               <Typography variant="h4" sx={{ mb: 0 }}>
                 {product.name}
               </Typography>
+
               <Tooltip
                 title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
               >
@@ -246,6 +285,39 @@ const ItemDetails: React.FC<{
                   </Typography>
                 </IconButton>
               </Tooltip>
+            </Stack>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                First seen: {formatDate(product.createdAt)}
+              </Typography>
+              {latestPoint && (
+                <Typography variant="body2" color="text.secondary">
+                  Last updated: {formatDate(latestPoint.scrapedAt)}
+                </Typography>
+              )}
+            </Box>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ mt: 0.5 }}
+            >
+              <Tooltip title={availabilityLabel}>
+                <Box
+                  sx={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    bgcolor: availabilityColor,
+                  }}
+                />
+              </Tooltip>
+              <Typography variant="body2" color="text.primary">
+                {currentPriceLabel}
+              </Typography>
+              <Typography variant="body2" sx={{ color: priceTrendColor }}>
+                {priceTrendSymbol}
+              </Typography>
             </Stack>
           </Stack>
         </Grid>
