@@ -174,7 +174,7 @@ export default function HomePage() {
           Board Game Price Tracker
         </Typography>
 
-        <Watchlist items={watchlist} />
+        <Watchlist items={watchlist} limit={10} />
 
         <TextField
           size="small"

@@ -13,6 +13,7 @@ type WatchlistItem = {
 
 interface WatchlistProps {
   items: WatchlistItem[];
+  limit?: number;
 }
 
 interface SparklineProps {
@@ -146,10 +147,10 @@ function WatchlistCard({ item }: { item: WatchlistItem }) {
   );
 }
 
-const Watchlist: React.FC<WatchlistProps> = ({ items }) => {
+const Watchlist: React.FC<WatchlistProps> = ({ items, limit }) => {
   const uniqueItems = Array.from(
     new Map(items.map((item) => [item.id, item])).values(),
-  );
+  ).slice(0, limit);
 
   if (!uniqueItems.length) {
     return null;
