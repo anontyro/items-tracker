@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-const theme = createTheme({
+let theme = createTheme({
   palette: {
     mode: "dark",
     primary: {
@@ -28,6 +28,23 @@ const theme = createTheme({
       "Segoe UI",
       "sans-serif",
     ].join(","),
+  },
+});
+
+theme = createTheme(theme, {
+  components: {
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          color: theme.palette.primary.light,
+          textDecoration: "none",
+          "&:hover": {
+            color: theme.palette.primary.main,
+            textDecoration: "none",
+          },
+        },
+      },
+    },
   },
 });
 

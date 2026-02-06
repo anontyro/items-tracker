@@ -6,6 +6,7 @@ import {
   CardContent,
   Grid,
   IconButton,
+  Link as MuiLink,
   Stack,
   Tab,
   Tabs,
@@ -55,18 +56,19 @@ const DetailTab: React.FC<DetailTabProps> = ({ product }) => {
           <Stack spacing={1}>
             {product.sources.map((source) => (
               <Box key={source.id}>
-                <Typography variant="body2" color="text.secondary">
-                  <a
-                    href={source.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {source.sourceName}
-                  </a>
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  SKU: {source.sku}
-                </Typography>
+                <MuiLink
+                  href={source.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="body2"
+                >
+                  {source.sourceName}
+                </MuiLink>
+                {source.sku && (
+                  <Typography variant="body2" color="text.secondary">
+                    SKU: {source.sku}
+                  </Typography>
+                )}
               </Box>
             ))}
           </Stack>
