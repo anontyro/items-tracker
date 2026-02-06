@@ -1,5 +1,9 @@
+import {
+  fetchProductDetail,
+  fetchProductHistory,
+} from "../../../../lib/api/products";
+
 import ItemDetails from "../../../../components/item/ItemDetails/ItemDetails";
-import { fetchProductDetail } from "../../../../lib/api/products";
 
 const ZatuItemDetails = async ({
   params,
@@ -9,10 +13,15 @@ const ZatuItemDetails = async ({
   const { itemId } = await params;
 
   const productDetails = await fetchProductDetail(itemId);
+  const productHistory = await fetchProductHistory({ productId: itemId });
 
-  console.log("productDetails is", productDetails);
-
-  return <ItemDetails product={productDetails} productId={itemId} />;
+  return (
+    <ItemDetails
+      product={productDetails}
+      productHistory={productHistory}
+      productId={itemId}
+    />
+  );
 };
 
 export default ZatuItemDetails;

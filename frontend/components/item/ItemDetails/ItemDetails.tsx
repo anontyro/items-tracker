@@ -13,10 +13,31 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import type {
+  ProductDetail,
+  ProductHistoryResponse,
+} from "../../../lib/api/products";
 import { useEffect, useState } from "react";
 
 import ItemHistory from "../ItemHistory/ItemHistory";
-import type { ProductDetail } from "../../../lib/api/products";
+
+const formatDate = (value: string) => {
+  const date = new Date(value);
+  const day = date.getUTCDate().toString().padStart(2, "0");
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, "0");
+  const year = date.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const formatDateTime = (value: string) => {
+  const date = new Date(value);
+  const day = date.getUTCDate().toString().padStart(2, "0");
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const hours = date.getUTCHours().toString().padStart(2, "0");
+  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes} UTC`;
+};
 
 type DetailTabProps = {
   product: ProductDetail;
@@ -41,10 +62,10 @@ const DetailTab: React.FC<DetailTabProps> = ({ product }) => {
           </Typography>
         )}
         <Typography variant="body2" color="text.secondary">
-          Created at: {new Date(product.createdAt).toLocaleString()}
+          Created at: {formatDateTime(product.createdAt)}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Updated at: {new Date(product.updatedAt).toLocaleString()}
+          Updated at: {formatDateTime(product.updatedAt)}
         </Typography>
       </Stack>
 
@@ -83,10 +104,11 @@ type WatchlistItem = {
   name: string;
 };
 
-const ItemDetails: React.FC<{ product: ProductDetail; productId: string }> = ({
-  product,
-  productId,
-}) => {
+const ItemDetails: React.FC<{
+  product: ProductDetail;
+  productId: string;
+  productHistory: ProductHistoryResponse;
+}> = ({ product, productHistory, productId }) => {
   const [tab, setTab] = useState(0);
   const [isWatched, setIsWatched] = useState(false);
 
@@ -188,7 +210,7 @@ const ItemDetails: React.FC<{ product: ProductDetail; productId: string }> = ({
               Type: {product.type}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              First seen: {new Date(product.createdAt).toLocaleDateString()}
+              First seen: {formatDate(product.createdAt)}
             </Typography>
             <Stack
               direction="row"
