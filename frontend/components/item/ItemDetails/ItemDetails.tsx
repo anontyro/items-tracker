@@ -19,7 +19,10 @@ import type {
 } from "../../../lib/api/products";
 import { useEffect, useState } from "react";
 
+import Image from "next/image";
 import ItemHistory from "../ItemHistory/ItemHistory";
+import bggIcon from "../../../static/images/icons/bgg-icon.png";
+import zatuIcon from "../../../static/images/icons/zatu-logo-orange-white.png";
 
 const formatDate = (value: string) => {
   const date = new Date(value);
@@ -406,6 +409,53 @@ const ItemDetails: React.FC<{
               <Typography variant="body2" sx={{ color: priceTrendColor }}>
                 {priceTrendSymbol}
               </Typography>
+            </Stack>
+            <Stack
+              direction="row"
+              sx={{ mt: 1 }}
+              spacing={1}
+              alignItems="center"
+            >
+              {product.sources && product.sources.length > 0 && (
+                <Tooltip title="View on retailer site">
+                  <IconButton
+                    component={MuiLink}
+                    href={product.sources[0].sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    sx={{ p: 0.25 }}
+                    aria-label="View on retailer site"
+                  >
+                    <Image
+                      src={zatuIcon}
+                      alt="Retailer link"
+                      width={35}
+                      height={20}
+                    />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {product.bggId && (
+                <Tooltip title="View on BoardGameGeek">
+                  <IconButton
+                    component={MuiLink}
+                    href={`https://boardgamegeek.com/boardgame/${product.bggId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    sx={{ p: 0.25 }}
+                    aria-label="View on BoardGameGeek"
+                  >
+                    <Image
+                      src={bggIcon}
+                      alt="BoardGameGeek link"
+                      width={20}
+                      height={20}
+                    />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Stack>
           </Stack>
         </Grid>
