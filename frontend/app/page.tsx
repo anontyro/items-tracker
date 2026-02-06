@@ -160,6 +160,13 @@ export default function HomePage() {
     };
   }, [isLoading, isFetching, isError, items.length, total, limit]);
 
+  const isInitialLoading = isLoading && offset === 0 && items.length === 0;
+  const isLoadingMore =
+    !isInitialLoading &&
+    (isLoading || isFetching) &&
+    items.length > 0 &&
+    items.length < total;
+
   return (
     <Container maxWidth="lg">
       <Stack spacing={2} sx={{ py: 4 }}>
@@ -181,14 +188,14 @@ export default function HomePage() {
           fullWidth
         />
 
-        {isLoading && <Typography>Loading products...</Typography>}
+        {isInitialLoading && <Typography>Loading products...</Typography>}
         {isError && (
           <Typography color="error">
             Failed to load products: {error.message}
           </Typography>
         )}
 
-        {!isLoading && !isError && (
+        {!isError && (
           <>
             <Typography variant="body2" color="text.secondary">
               Showing {items.length} of {total} products (page offset {offset})
@@ -257,6 +264,15 @@ export default function HomePage() {
               })}
             </List>
             <div ref={sentinelRef} />
+            {isLoadingMore && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 1, textAlign: "center" }}
+              >
+                Loading more products...
+              </Typography>
+            )}
           </>
         )}
       </Stack>

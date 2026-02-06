@@ -106,7 +106,13 @@ function WatchlistCard({ item }: { item: WatchlistItem }) {
   const latest = history[0];
 
   return (
-    <Card variant="outlined">
+    <Card
+      sx={{
+        width: "200px",
+        height: "160px",
+      }}
+      variant="outlined"
+    >
       <CardContent>
         <Stack spacing={1}>
           <Typography
@@ -154,7 +160,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ items }) => {
       <Typography variant="h6">Watchlist</Typography>
       <Grid container spacing={2}>
         {uniqueItems.map((item) => (
-          <Grid key={item.id} item xs={12} sm={6} md={4} lg={3}>
+          <Grid key={item.id}>
             <WatchlistCard item={item} />
           </Grid>
         ))}

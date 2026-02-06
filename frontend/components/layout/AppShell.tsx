@@ -82,7 +82,7 @@ export default function AppShell({ children }: AppShellProps) {
 
   return (
     <Box sx={{ minHeight: "100vh", position: "relative" }}>
-      <AppBar position="static" color="default" elevation={1}>
+      <AppBar position="sticky" color="default" elevation={1}>
         <Toolbar sx={{ gap: 2 }}>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Board Game Price Tracker
