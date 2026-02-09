@@ -1,16 +1,16 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { ImageStatus, ProductImage } from "@prisma/client";
-import { PrismaService } from "../prisma/prisma.service";
 import * as fs from "fs";
 import * as fsp from "fs/promises";
-import * as path from "path";
 import * as http from "http";
 import * as https from "https";
+import * as path from "path";
+
+import { ImageStatus, ProductImage } from "@prisma/client";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+
+import { PrismaService } from "../prisma/prisma.service";
 
 export interface SaveImageFromUrlInput {
-  productId: string;
-  sourceId?: string | null;
-  bggId?: string | null;
+  sourceUrl: string;
   remoteImageUrl: string;
 }
 
@@ -46,8 +46,8 @@ export class ImagesService {
           void fsp.unlink(fullPath).catch(() => undefined);
           reject(
             new Error(
-              `Failed to download image. Status code: ${response.statusCode}`
-            )
+              `Failed to download image. Status code: ${response.statusCode}`,
+            ),
           );
           return;
         }
@@ -85,14 +85,19 @@ export class ImagesService {
   }
 
   async saveImageFromUrl(input: SaveImageFromUrlInput): Promise<ProductImage> {
-    const { productId, sourceId, bggId, remoteImageUrl } = input;
+    const { sourceUrl, remoteImageUrl } = input;
 
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
-    if (!product) {
-      throw new NotFoundException("Product not found for image");
+    const source = await this.prisma.productSource.findUnique({
+      where: { sourceUrl },
+      include: { product: true },
+    });
+
+    if (!source || !source.product) {
+      throw new NotFoundException("Product source not found for image");
     }
 
-    const resolvedBggId = product.bggId ?? bggId ?? null;
+    const product = source.product;
+    const resolvedBggId = product.bggId ?? null;
     const canonicalKey = this.getCanonicalKey(product.id, resolvedBggId);
     const ext = this.getExtensionFromUrl(remoteImageUrl);
     const relativeImagePath = this.getRelativeImagePath(canonicalKey, ext);
@@ -100,7 +105,7 @@ export class ImagesService {
 
     this.logger.log(
       { productId: product.id, bggId: resolvedBggId, remoteImageUrl, fullPath },
-      "Saving image from scrape URL"
+      "Saving image from scrape URL",
     );
 
     await this.downloadToFile(remoteImageUrl, fullPath);
@@ -124,7 +129,7 @@ export class ImagesService {
           lastCheckedAt: null,
           bggId: resolvedBggId ?? undefined,
           productId: product.id,
-          sourceId: sourceId ?? undefined,
+          sourceId: source.id,
         },
       });
     }
@@ -137,15 +142,17 @@ export class ImagesService {
         lastCheckedAt: null,
         bggId: resolvedBggId ?? undefined,
         productId: product.id,
-        sourceId: sourceId ?? undefined,
+        sourceId: source.id,
       },
     });
   }
 
   async getCanonicalImageForProduct(
-    productId: string
+    productId: string,
   ): Promise<ProductImage | null> {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
     if (!product) {
       return null;
     }
@@ -179,7 +186,7 @@ export class ImagesService {
   }
 
   async resolveFileForImage(
-    image: ProductImage
+    image: ProductImage,
   ): Promise<{ fullPath: string } | null> {
     if (!image.localPath) {
       return null;
@@ -193,7 +200,7 @@ export class ImagesService {
     } catch (err) {
       this.logger.warn(
         { imageId: image.id, localPath: image.localPath, err },
-        "Image file missing on disk; marking as MISSING"
+        "Image file missing on disk; marking as MISSING",
       );
       await this.markImageMissing(image.id);
       return null;

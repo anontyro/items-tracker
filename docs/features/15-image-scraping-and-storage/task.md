@@ -4,8 +4,7 @@ This feature adds support for scraping product images from retailer sites, stori
 
 ## Implementation Plan
 
-1. [ ] **Define backend image model and storage layout**
-
+1. [x] **Define backend image model and storage layout**
    - [ ] Add a `GameImage` (name TBD, e.g. `ProductImage`) model to `backend/prisma/schema.prisma`:
      - [ ] `id` (string UUID primary key).
      - [ ] `productId` (string, nullable or required – links to `Product.id`).
@@ -33,8 +32,7 @@ This feature adds support for scraping product images from retailer sites, stori
    - [ ] Ensure NestJS is configured to serve static files from `backend/public` (if not already):
      - [ ] Use `ServeStaticModule` or equivalent to expose `/images/*` under `/`.
 
-2. [ ] **Add backend image service and canonical selection logic**
-
+2. [x] **Add backend image service and canonical selection logic**
    - [ ] Create a dedicated service (e.g. `ImageService`) responsible for:
      - [ ] Looking up the **canonical image** for a product:
        - [ ] Load `Product` by `id`.
@@ -54,17 +52,14 @@ This feature adds support for scraping product images from retailer sites, stori
        - [ ] Writes the downloaded image file to the correct folder.
        - [ ] Upserts the corresponding `GameImage` record.
 
-3. [ ] **Implement backend image download and scraper‑facing ingest endpoint (Option B)**
-
+3. [x] **Implement backend image download and scraper‑facing ingest endpoint (Option B)**
    - [ ] Follow the agreed approach where the **backend pulls images from the remote URL** instead of the scraper uploading bytes.
-   - [ ] Add a new **scraper‑protected** endpoint under `/v1` (exact naming TBD, for example):
-     - [ ] `POST /v1/images/from-scrape`
+   - [x] Add a new **scraper‑protected** endpoint under `/v1`:
+     - [x] `POST /v1/images/from-scrape`
        - [ ] Protected by `SCRAPER_API_KEY` via `x-api-key` header.
-       - [ ] Request body (example):
-         - [ ] `productId` (backend product ID).
-         - [ ] Optional `bggId` if known at scrape time (usually `null` for now; we will rely on `Product.bggId` once linked).
-         - [ ] `sourceName` or `sourceId` to record which retailer this came from.
-         - [ ] `remoteImageUrl` (string) – image URL scraped from the retailer.
+       - [x] Request body (current implementation):
+         - [x] `sourceUrl` (string) – product `sourceUrl` from the retailer, used to resolve `ProductSource` and `Product`.
+         - [x] `remoteImageUrl` (string) – image URL scraped from the retailer.
        - [ ] Behaviour:
          - [ ] Resolve the product and its `bggId`.
          - [ ] Compute canonical key: `bggId` if present else `productId`.
@@ -73,33 +68,27 @@ This feature adds support for scraping product images from retailer sites, stori
            - [ ] Save the file to `backend/public/images/games/<canonicalKey>/<imageId>.<ext>`.
            - [ ] Call `ImageService.upsertImageFromScrape(...)` to persist/update the DB record.
          - [ ] On failure:
-           - [ ] Log a concise error, **do not fail the scrape run as a whole**.
-           - [ ] Optionally leave/mark any existing image record as `missing` or unchanged.
-   - [ ] For v1, **do not** add an offline outbox for image ingestion; instead, rely on the fact that images can be fetched again later (rescrape flow) if this call fails.
 
-4. [ ] **Extend scraper to extract product detail URL and image URL**
-
-   - [ ] Extend the scraper’s site configuration for image scraping:
-     - [ ] In `scraper/config/sites/*.json`, add selectors for:
-       - [ ] `productLinkSelector` – to get the product detail page URL from the list HTML (`<a class="zg-product-image" href="...">`).
-       - [ ] `listImageSelector` (optional) – to read the list page image `src` as a fallback.
-     - [ ] Optionally add a flag `followProductPageForImage: true` to indicate we should navigate into the detail page for a better image.
-   - [ ] Update `scrapeSiteWithPlaywright` in `scraper/src/scraper/boardGameScraper.ts` to:
-     - [ ] Extract the product detail URL per item from the list.
-     - [ ] Navigate to the detail page when `followProductPageForImage` is true, and extract a higher‑quality image URL using a configured selector (e.g. main product image).
-     - [ ] Fall back to the list image URL if a better one cannot be found.
-   - [ ] Extend the `RawScrapedProductRow` type and normalization pipeline to include image metadata:
-     - [ ] Add fields like `productPageUrl` and `imageUrl` to `RawScrapedProductRow`.
-     - [ ] Ensure these fields are persisted into SQLite via `saveScrapedProducts` so they are available for debugging.
-     - [ ] In `normalizeRowsForSite`, expose enough information (e.g. mapping from normalized product to its `imageUrl` + `productPageUrl`) so the scraper can call the backend image ingest endpoint for relevant products.
-   - [ ] On each scrape run, after or alongside price history ingestion:
-     - [ ] For each normalized product row (or at least those without an active local image), call the backend `/v1/images/from-scrape` endpoint with:
-       - [ ] `productId` returned from the price ingest flow (or via a lookup if needed).
-       - [ ] Source identifier and `remoteImageUrl`.
-     - [ ] Keep this best‑effort (log failures, but do not block the run).
+4. [x] **Extend scraper to extract product detail URL and image URL**
+   - [x] Extend the scraper’s site configuration for image scraping:
+     - [x] In `scraper/config/sites/*.json`, add selectors for:
+       - [x] `productImageList` – CSS selector to read the list page image `src`/`data-src` as a fallback.
+       - [x] `productImageDetail` – CSS selector used on the product detail page for a higher‑quality image.
+     - [x] Add a flag `followProductPageForImage: true` to indicate we should navigate into the detail page for a better image when desired.
+   - [x] Update `scrapeSiteWithPlaywright` in `scraper/src/scraper/boardGameScraper.ts` to:
+     - [x] Use the existing product detail URL per item from the list (`url` field).
+     - [x] Extract a list‑page image URL when `productImageList` is configured.
+     - [x] Optionally navigate to the detail page when `followProductPageForImage` is true and extract a higher‑quality image URL using `productImageDetail`.
+     - [x] Fall back to the list image URL if a better one cannot be found.
+   - [x] Extend the normalization pipeline to include image metadata:
+     - [x] Store `imageUrl` inside `raw_json` for each scraped row.
+     - [x] In `normalizeRowsForSite`, parse `raw_json` to recover `imageUrl` and include it in `source.additionalData` alongside `productPageUrl`.
+   - [x] On each scrape run, after price history ingestion:
+     - [x] For each normalized product row that has an `imageUrl`, call the backend `/v1/images/from-scrape` endpoint with:
+       - [x] `sourceUrl` (from the normalized source) and `remoteImageUrl` (`imageUrl`).
+     - [x] Keep this best‑effort (loggable failures, but do not block the run).
 
 5. [ ] **Lazy missing‑file detection and automatic refill on future scrapes**
-
    - [ ] In the backend image service / controller, **check file existence** whenever an image is requested or resolved:
      - [ ] If `GameImage.localPath` is set but the file is not present on disk:
        - [ ] Update the record: `status = 'missing'` and set `lastCheckedAt = now()`.
@@ -115,7 +104,6 @@ This feature adds support for scraping product images from retailer sites, stori
        - [ ] Only fall back to retailer‑specific or placeholder images when none exist.
 
 6. [ ] **Add public image endpoint for frontend consumption**
-
    - [ ] Implement `GET /v1/games/:id/image` (or `products` if you prefer to keep naming consistent) on the backend:
      - [ ] Path parameter: `:id` is the backend `Product.id`.
      - [ ] Behaviour:
@@ -131,7 +119,6 @@ This feature adds support for scraping product images from retailer sites, stori
      - [ ] Protect this endpoint with the same `FRONTEND_API_KEY` mechanism as other frontend APIs.
 
 7. [ ] **Wire frontend list view to use game images (with graceful fallback)**
-
    - [ ] Update the frontend item / list components to use the new image endpoint:
      - [ ] For each product item in the list, trigger a fetch to `/v1/games/:id/image` (or construct a direct URL if we expose images as static paths under a predictable pattern).
      - [ ] If the request succeeds, render the returned image.
@@ -141,7 +128,6 @@ This feature adds support for scraping product images from retailer sites, stori
      - [ ] Product detail pages and richer galleries can be added in future features.
 
 8. [ ] **Testing & verification**
-
    - [ ] Backend:
      - [ ] Unit tests for `ImageService` canonical selection:
        - [ ] Product with `bggId` and existing canonical image.
@@ -176,7 +162,7 @@ This feature adds support for scraping product images from retailer sites, stori
   - Future scrapes that see the same game (via the normal scraping cadence) will naturally attempt to refetch and restore the image via `/v1/images/from-scrape`.
 - Image quality:
   - For now, we store a **single size** per game, preferring the best available image from the product detail page.
-  - The scraper should navigate to the product page to capture the higher‑quality image when feasible, falling back to list images only when necessary.
+  - The scraper can optionally navigate to the product page (controlled by `SCRAPER_ENABLE_DETAIL_IMAGES`) to capture a higher‑quality image when feasible, falling back to list images only when necessary.
 - Future extensions (out of scope for this feature, but influenced by this design):
   - Support multiple images per game (front, back, alt art) with a `isPrimary` flag.
   - Add an admin UI to manually upload or override images and to manage edge cases.

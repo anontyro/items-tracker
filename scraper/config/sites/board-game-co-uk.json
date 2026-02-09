@@ -11,9 +11,12 @@
     "productAvailability": ".zg-product-notice span",
     "productRrp": ".zg-price-box-was",
     "productUrl": ".zg-product-title h2 a",
-    "productSku": "[data-sku]"
+    "productSku": "[data-sku]",
+    "productImageList": ".zg-product-image img",
+    "productImageDetail": ".zg-product-image img"
   },
   "rateLimitMs": 2000,
   "paginationSelector": ".zg-paging a.bpf-page-link",
-  "isActive": true
+  "isActive": true,
+  "followProductPageForImage": true
 }

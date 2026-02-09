@@ -57,3 +57,5 @@ Thumbs.db
 
 *.sqlite
 *.csv
+
+backend/public/images/games/*/**

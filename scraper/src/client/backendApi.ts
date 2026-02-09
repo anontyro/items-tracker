@@ -45,6 +45,11 @@ export interface BackendIngestSummary {
   updatedSources: number;
 }
 
+export interface ImageFromScrapePayload {
+  sourceUrl: string;
+  remoteImageUrl: string;
+}
+
 function getBackendBatchSize(): number {
   const fallback = 50;
   const raw = process.env.SCRAPER_BACKEND_BATCH_SIZE;
@@ -72,7 +77,7 @@ function chunkArray<T>(items: T[], size: number): T[][] {
 }
 
 function toPriceSnapshotPayload(
-  normalized: NormalizedPriceHistoryInput
+  normalized: NormalizedPriceHistoryInput,
 ): PriceSnapshotPayload {
   const { product, source, price, rrp, availability, currencyCode, scrapedAt } =
     normalized;
@@ -123,7 +128,7 @@ export async function sendPriceSnapshotsBatch(options: {
   const url = `${apiBaseUrl.replace(/\/$/, "")}/v1/price-history/batch`;
 
   const snapshots: PriceSnapshotPayload[] = normalized.map((n) =>
-    toPriceSnapshotPayload(n)
+    toPriceSnapshotPayload(n),
   );
 
   const batchSize = getBackendBatchSize();
@@ -171,4 +176,54 @@ export async function sendPriceSnapshotsBatch(options: {
     newSources,
     updatedSources,
   };
+}
+
+export async function sendImagesFromScrape(options: {
+  apiBaseUrl: string;
+  apiKey: string;
+  normalized: NormalizedPriceHistoryInput[];
+}): Promise<void> {
+  const { apiBaseUrl, apiKey, normalized } = options;
+
+  if (!normalized.length) {
+    return;
+  }
+
+  const url = `${apiBaseUrl.replace(/\/$/, "")}/v1/images/from-scrape`;
+
+  const seen = new Set<string>();
+
+  for (const n of normalized) {
+    const sourceUrl = n.source.sourceUrl;
+    const additional = n.source.additionalData ?? {};
+    const imageUrl = (additional as any).imageUrl as string | undefined | null;
+
+    if (!sourceUrl || !imageUrl) {
+      continue;
+    }
+
+    const key = `${sourceUrl}::${imageUrl}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
+    try {
+      const payload: ImageFromScrapePayload = {
+        sourceUrl,
+        remoteImageUrl: imageUrl,
+      };
+
+      await axios.post(url, payload, {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        timeout: 10000,
+      });
+    } catch {
+      // Best-effort only: failures here should not break the main scrape flow.
+      // Errors are intentionally swallowed; they can be inspected via backend logs.
+    }
+  }
 }

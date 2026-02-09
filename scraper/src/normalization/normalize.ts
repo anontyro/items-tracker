@@ -24,7 +24,7 @@ export interface NormalizedPriceHistoryInput {
 }
 
 function deriveAvailabilityFlag(
-  availabilityText: string | null
+  availabilityText: string | null,
 ): boolean | null {
   if (!availabilityText) {
     return null;
@@ -45,7 +45,7 @@ function deriveAvailabilityFlag(
 }
 
 function deriveCurrencyCode(
-  priceText: string | null | undefined
+  priceText: string | null | undefined,
 ): string | null {
   if (!priceText) {
     return null;
@@ -78,7 +78,7 @@ function deriveCurrencyCode(
 
 export function normalizeRowsForSite(
   siteConfig: SiteConfig,
-  rows: RawScrapedProductRow[]
+  rows: RawScrapedProductRow[],
 ): NormalizedPriceHistoryInput[] {
   const productIdentity: NormalizedProductIdentity = {
     name: "", // filled per-row from scraped data
@@ -90,8 +90,20 @@ export function normalizeRowsForSite(
     .map((row) => {
       const availability = deriveAvailabilityFlag(row.availability_text);
       const currencyCode = deriveCurrencyCode(
-        row.price_text ?? row.rrp_text ?? undefined
+        row.price_text ?? row.rrp_text ?? undefined,
       );
+
+      let imageUrl: string | null = null;
+      try {
+        const parsed = JSON.parse(row.raw_json) as {
+          imageUrl?: string | null;
+        } | null;
+        if (parsed && typeof parsed.imageUrl === "string") {
+          imageUrl = parsed.imageUrl;
+        }
+      } catch {
+        // Ignore JSON parse errors; imageUrl will remain null.
+      }
 
       const product: NormalizedProductIdentity = {
         ...productIdentity,
@@ -108,6 +120,8 @@ export function normalizeRowsForSite(
           priceText: row.price_text,
           rrpText: row.rrp_text,
           availabilityText: row.availability_text,
+          imageUrl,
+          productPageUrl: row.url,
         },
       };
 

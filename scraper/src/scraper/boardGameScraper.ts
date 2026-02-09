@@ -16,6 +16,7 @@ export interface ScrapedProduct {
   rrpText: string | null;
   availabilityText: string | null;
   sku: string | null;
+  imageUrl: string | null;
 }
 
 function parseNumber(value: string | null | undefined): number | null {
@@ -38,7 +39,7 @@ async function gotoWithRetry(
   url: string,
   logger: pino.Logger,
   meta: { siteId: string; page: number },
-  options?: { maxAttempts?: number; baseDelayMs?: number }
+  options?: { maxAttempts?: number; baseDelayMs?: number },
 ): Promise<void> {
   const maxAttempts = options?.maxAttempts ?? 3;
   const baseDelayMs = options?.baseDelayMs ?? 5_000;
@@ -61,7 +62,7 @@ async function gotoWithRetry(
             maxAttempts,
             err: errorMessage,
           },
-          "Failed to navigate after maximum attempts; giving up on further pages"
+          "Failed to navigate after maximum attempts; giving up on further pages",
         );
         throw err;
       }
@@ -75,7 +76,7 @@ async function gotoWithRetry(
           maxAttempts,
           err: errorMessage,
         },
-        "Navigation failed; will retry after backoff"
+        "Navigation failed; will retry after backoff",
       );
 
       const backoffMs = baseDelayMs * Math.pow(2, attempt - 1);
@@ -87,7 +88,11 @@ async function gotoWithRetry(
 export async function* scrapeSiteWithPlaywright(
   siteConfig: SiteConfig,
   logger: pino.Logger,
-  options?: { maxPages?: number; startPage?: number }
+  options?: {
+    maxPages?: number;
+    startPage?: number;
+    enableDetailImages?: boolean;
+  },
 ): AsyncGenerator<ScrapedProduct[], void, void> {
   const headlessEnv = process.env.PLAYWRIGHT_HEADLESS;
   const headless =
@@ -116,7 +121,7 @@ export async function* scrapeSiteWithPlaywright(
     while (nextUrl && (!hasMaxPages || currentPage <= maxPages)) {
       logger.info(
         { siteId: siteConfig.siteId, page: currentPage, url: nextUrl },
-        "Scraping product list page"
+        "Scraping product list page",
       );
 
       try {
@@ -138,7 +143,7 @@ export async function* scrapeSiteWithPlaywright(
       } catch {
         logger.warn(
           { siteId: siteConfig.siteId, page: currentPage },
-          "Timed out waiting for productList selector; continuing to count anyway"
+          "Timed out waiting for productList selector; continuing to count anyway",
         );
       }
 
@@ -147,12 +152,12 @@ export async function* scrapeSiteWithPlaywright(
         const html = await page.content();
         const dumpPath = path.resolve(
           process.cwd(),
-          `debug-${siteConfig.siteId}-page-${currentPage}.html`
+          `debug-${siteConfig.siteId}-page-${currentPage}.html`,
         );
         await fs.writeFile(dumpPath, html, "utf8");
         logger.info(
           { siteId: siteConfig.siteId, page: currentPage, dumpPath },
-          "Wrote debug HTML dump for page"
+          "Wrote debug HTML dump for page",
         );
       }
 
@@ -167,7 +172,7 @@ export async function* scrapeSiteWithPlaywright(
           page: currentPage,
           productCount,
         },
-        "Found products on page"
+        "Found products on page",
       );
 
       if (currentPage >= startPage) {
@@ -202,7 +207,7 @@ export async function* scrapeSiteWithPlaywright(
 
           let availabilityText: string | null = null;
           const availabilityElement = item.locator(
-            siteConfig.selectors.productAvailability
+            siteConfig.selectors.productAvailability,
           );
           if (await availabilityElement.count()) {
             availabilityText =
@@ -217,6 +222,72 @@ export async function* scrapeSiteWithPlaywright(
             sku = (await skuElement.getAttribute("data-sku")) ?? null;
           }
 
+          let imageUrl: string | null = null;
+
+          const listImageSelector = siteConfig.selectors.productImageList;
+          if (listImageSelector) {
+            const imgElement = item.locator(listImageSelector).first();
+            if (await imgElement.count()) {
+              const srcAttr =
+                (await imgElement.getAttribute("data-src")) ??
+                (await imgElement.getAttribute("src"));
+              if (srcAttr) {
+                imageUrl =
+                  srcAttr.startsWith("http://") ||
+                  srcAttr.startsWith("https://")
+                    ? srcAttr
+                    : new URL(srcAttr, siteConfig.baseUrl).toString();
+              }
+            }
+          }
+
+          if (
+            options?.enableDetailImages &&
+            siteConfig.followProductPageForImage
+          ) {
+            const detailSelector = siteConfig.selectors.productImageDetail;
+            if (detailSelector) {
+              const detailPage = await context.newPage();
+              try {
+                await detailPage.goto(absoluteUrl, {
+                  waitUntil: "domcontentloaded",
+                  timeout: 15000,
+                });
+
+                const detailImg = detailPage.locator(detailSelector).first();
+                if (await detailImg.count()) {
+                  const srcAttr =
+                    (await detailImg.getAttribute("data-src")) ??
+                    (await detailImg.getAttribute("src"));
+                  if (srcAttr) {
+                    const abs =
+                      srcAttr.startsWith("http://") ||
+                      srcAttr.startsWith("https://")
+                        ? srcAttr
+                        : new URL(srcAttr, siteConfig.baseUrl).toString();
+                    imageUrl = abs;
+                  }
+                }
+              } catch (err) {
+                const message =
+                  err instanceof Error
+                    ? err.message
+                    : "Unknown error while scraping detail image";
+                logger.warn(
+                  {
+                    siteId: siteConfig.siteId,
+                    page: currentPage,
+                    url: absoluteUrl,
+                    err: message,
+                  },
+                  "Failed to scrape image from product detail page; using list image if available",
+                );
+              } finally {
+                await detailPage.close();
+              }
+            }
+          }
+
           pageResults.push({
             siteId: siteConfig.siteId,
             sourceProductId,
@@ -228,6 +299,7 @@ export async function* scrapeSiteWithPlaywright(
             rrpText,
             availabilityText,
             sku,
+            imageUrl,
           });
         }
 

@@ -7,11 +7,11 @@ import {
   NotFoundException,
   Param,
   Post,
+  StreamableFile,
   UnauthorizedException,
 } from "@nestjs/common";
 
 import { ImagesService, SaveImageFromUrlInput } from "./images.service";
-import { StreamableFile } from "@nestjs/common";
 import { createReadStream } from "fs";
 
 @Controller()
@@ -41,17 +41,15 @@ export class ImagesController {
   ) {
     this.assertScraperApiKey(apiKey);
 
-    const { productId, sourceId, bggId, remoteImageUrl } = body;
+    const { sourceUrl, remoteImageUrl } = body;
 
     this.logger.log(
-      { productId, sourceId, bggId, remoteImageUrl },
+      { sourceUrl, remoteImageUrl },
       "Received image from scrape request",
     );
 
     const image = await this.imagesService.saveImageFromUrl({
-      productId,
-      sourceId,
-      bggId,
+      sourceUrl,
       remoteImageUrl,
     });
 

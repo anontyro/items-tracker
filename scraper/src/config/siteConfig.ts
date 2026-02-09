@@ -9,6 +9,8 @@ export interface SiteSelectors {
   productRrp: string;
   productUrl: string;
   productSku: string;
+  productImageList?: string;
+  productImageDetail?: string;
 }
 
 export interface SiteConfig {
@@ -21,6 +23,7 @@ export interface SiteConfig {
   rateLimitMs: number;
   paginationSelector: string;
   isActive: boolean;
+  followProductPageForImage?: boolean;
 }
 
 const SITES_DIR = path.resolve(__dirname, "../../config/sites");
@@ -35,7 +38,7 @@ function ensureString(value: unknown, field: string): string {
 function ensureNumber(value: unknown, field: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new Error(
-      `Invalid or missing numeric field '${field}' in site config`
+      `Invalid or missing numeric field '${field}' in site config`,
     );
   }
   return value;
@@ -52,11 +55,19 @@ function ensureSelectors(raw: any): SiteSelectors {
     productPrice: ensureString(raw.productPrice, "selectors.productPrice"),
     productAvailability: ensureString(
       raw.productAvailability,
-      "selectors.productAvailability"
+      "selectors.productAvailability",
     ),
     productRrp: ensureString(raw.productRrp, "selectors.productRrp"),
     productUrl: ensureString(raw.productUrl, "selectors.productUrl"),
     productSku: ensureString(raw.productSku, "selectors.productSku"),
+    productImageList:
+      typeof raw.productImageList === "string"
+        ? raw.productImageList
+        : undefined,
+    productImageDetail:
+      typeof raw.productImageDetail === "string"
+        ? raw.productImageDetail
+        : undefined,
   };
 }
 
@@ -73,6 +84,10 @@ function validateSiteConfig(raw: any): SiteConfig {
       ? raw.paginationSelector
       : undefined;
   const isActive = Boolean(raw.isActive);
+  const followProductPageForImage =
+    typeof raw.followProductPageForImage === "boolean"
+      ? raw.followProductPageForImage
+      : false;
 
   return {
     siteId,
@@ -84,6 +99,7 @@ function validateSiteConfig(raw: any): SiteConfig {
     rateLimitMs,
     paginationSelector,
     isActive,
+    followProductPageForImage,
   };
 }
 

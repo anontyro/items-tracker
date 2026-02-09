@@ -7,12 +7,15 @@ import {
   saveScrapedProducts,
 } from "./storage/sqlite";
 import { getActiveSiteConfigs, loadSiteConfigs } from "./config/siteConfig";
+import {
+  sendImagesFromScrape,
+  sendPriceSnapshotsBatch,
+} from "./client/backendApi";
 
 import { config } from "./config/env";
 import { normalizeRowsForSite } from "./normalization/normalize";
 import pino from "pino";
 import { scrapeSiteWithPlaywright } from "./scraper/boardGameScraper";
-import { sendPriceSnapshotsBatch } from "./client/backendApi";
 
 const logger = pino({
   level: process.env.LOG_LEVEL ?? "info",
@@ -41,7 +44,7 @@ async function main() {
       siteCount: allSites.length,
       activeSiteIds: activeSites.map((s) => s.siteId),
     },
-    "Loaded scraper site configurations"
+    "Loaded scraper site configurations",
   );
 
   for (const site of activeSites) {
@@ -55,13 +58,14 @@ async function main() {
       for await (const pageProducts of scrapeSiteWithPlaywright(site, logger, {
         maxPages: config.maxPages,
         startPage: config.startPage,
+        enableDetailImages: config.enableDetailImages,
       })) {
         totalProducts += pageProducts.length;
 
         if (sampleNames.length < 5) {
           const remaining = 5 - sampleNames.length;
           sampleNames.push(
-            ...pageProducts.slice(0, remaining).map((p) => p.name)
+            ...pageProducts.slice(0, remaining).map((p) => p.name),
           );
         }
 
@@ -90,11 +94,17 @@ async function main() {
           queueId,
           normalizedCount: normalized.length,
         },
-        "Enqueued normalized price snapshots for backend sync"
+        "Enqueued normalized price snapshots for backend sync",
       );
 
       try {
         const ingestSummary = await sendPriceSnapshotsBatch({
+          apiBaseUrl: config.backendApiUrl,
+          apiKey: config.apiKey,
+          normalized,
+        });
+
+        await sendImagesFromScrape({
           apiBaseUrl: config.backendApiUrl,
           apiKey: config.apiKey,
           normalized,
@@ -110,7 +120,7 @@ async function main() {
             normalizedCount: normalized.length,
             ingestSummary,
           },
-          "Pushed normalized price snapshots to backend API"
+          "Pushed normalized price snapshots to backend API",
         );
       } catch (err) {
         const message =
@@ -123,12 +133,12 @@ async function main() {
           config.sqlitePath,
           queueId,
           message,
-          nextAttemptAtIso
+          nextAttemptAtIso,
         );
 
         logger.error(
           { siteId: site.siteId, runId, queueId, err: message },
-          "Failed to push normalized price snapshots to backend API; will retry via queue"
+          "Failed to push normalized price snapshots to backend API; will retry via queue",
         );
       }
     } else {
@@ -141,14 +151,14 @@ async function main() {
         if (sampleNames.length < 5) {
           const remaining = 5 - sampleNames.length;
           sampleNames.push(
-            ...pageProducts.slice(0, remaining).map((p) => p.name)
+            ...pageProducts.slice(0, remaining).map((p) => p.name),
           );
         }
       }
 
       logger.info(
         { siteId: site.siteId, count: totalProducts },
-        "SCRAPER_DISABLE_SQLITE is set; skipping SQLite persistence for site"
+        "SCRAPER_DISABLE_SQLITE is set; skipping SQLite persistence for site",
       );
     }
 
@@ -159,7 +169,7 @@ async function main() {
         sampleNames,
         sqlitePath: config.sqlitePath,
       },
-      "Completed sample scrape for site"
+      "Completed sample scrape for site",
     );
   }
 
@@ -169,8 +179,13 @@ async function main() {
   logger.info("Scraper service foundation is running. Implement jobs next.");
 }
 
-main().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error("Fatal error in scraper service", err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    logger.info("Scraper service run completed; exiting.");
+    process.exit(0);
+  })
+  .catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error("Fatal error in scraper service", err);
+    process.exit(1);
+  });
