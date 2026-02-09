@@ -114,6 +114,7 @@ const ItemDetails: React.FC<{
 }> = ({ product, productHistory, productId }) => {
   const [tab, setTab] = useState(0);
   const [isWatched, setIsWatched] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const historyItems = productHistory?.items ?? [];
   const latestPoint = historyItems.length > 0 ? historyItems[0] : undefined;
@@ -330,10 +331,40 @@ const ItemDetails: React.FC<{
             sx={{
               width: "100%",
               aspectRatio: "4 / 3",
-              bgcolor: "grey.200",
               borderRadius: 1,
+              overflow: "hidden",
             }}
-          />
+          >
+            {!imageError ? (
+              <Box
+                component="img"
+                src={`/api/games/${product.id}/image`}
+                alt={product.name}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: "grey.200",
+                }}
+              >
+                <Typography variant="h5" align="center">
+                  {product.name}
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Grid>
         <Grid
           size={{

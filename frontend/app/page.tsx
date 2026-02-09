@@ -22,6 +22,32 @@ type WatchlistItem = {
   name: string;
 };
 
+function ProductAvatar({ product }: { product: ProductSummary }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <Avatar variant="rounded" sx={{ width: 56, height: 56, mr: 2 }}>
+        {product.name.charAt(0)}
+      </Avatar>
+    );
+  }
+
+  return (
+    <Avatar
+      variant="rounded"
+      sx={{ width: 56, height: 56, mr: 2 }}
+      src={`/api/games/${product.id}/image`}
+      alt={product.name}
+      imgProps={{
+        onError: () => setHasError(true),
+      }}
+    >
+      {product.name.charAt(0)}
+    </Avatar>
+  );
+}
+
 export default function HomePage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -248,12 +274,7 @@ export default function HomePage() {
                     }
                   >
                     <ListItemAvatar>
-                      <Avatar
-                        variant="rounded"
-                        sx={{ width: 56, height: 56, mr: 2 }}
-                      >
-                        {product.name.charAt(0)}
-                      </Avatar>
+                      <ProductAvatar product={product} />
                     </ListItemAvatar>
                     <ListItemText
                       primary={product.name}

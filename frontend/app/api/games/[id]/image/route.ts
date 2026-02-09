@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from "next/server";
+
+function getBackendBaseUrl() {
+  const url = process.env.BACKEND_API_URL || "http://localhost:3005";
+  return url.replace(/\/$/, "");
+}
+
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const backendBase = getBackendBaseUrl();
+  const apiKey = process.env.FRONTEND_API_KEY || "";
+  const { id } = await context.params;
+
+  const backendUrl = `${backendBase}/v1/games/${encodeURIComponent(id)}/image`;
+
+  const res = await fetch(backendUrl, {
+    headers: {
+      "x-api-key": apiKey,
+    },
+    cache: "no-store",
+  });
+
+  const contentType = res.headers.get("content-type") ?? "image/jpeg";
+
+  return new NextResponse(res.body, {
+    status: res.status,
+    headers: {
+      "Content-Type": contentType,
+    },
+  });
+}
