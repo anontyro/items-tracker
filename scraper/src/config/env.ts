@@ -15,6 +15,7 @@ export interface ScraperConfig {
   maxPages?: number; // optional; when undefined, scraper runs with no page limit
   sqlitePath: string;
   enableDetailImages: boolean;
+  serviceMode: boolean;
 }
 
 function requireEnv(name: string, defaultValue?: string): string {
@@ -54,4 +55,7 @@ export const config: ScraperConfig = {
   enableDetailImages:
     process.env.SCRAPER_ENABLE_DETAIL_IMAGES === "1" ||
     process.env.SCRAPER_ENABLE_DETAIL_IMAGES === "true",
+  serviceMode:
+    process.env.SCRAPER_SERVICE_MODE === "1" ||
+    process.env.SCRAPER_SERVICE_MODE === "true",
 };

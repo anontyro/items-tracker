@@ -175,12 +175,24 @@ async function main() {
 
   // TODO: wire up BullMQ queues and Playwright-based scraping in later steps
 
-  // For now, just keep the process alive so dev mode can attach future workers
-  logger.info("Scraper service foundation is running. Implement jobs next.");
+  if (config.serviceMode) {
+    logger.info(
+      "SCRAPER_SERVICE_MODE is enabled; keeping process alive for future jobs.",
+    );
+  } else {
+    logger.info("Scraper service run completed in one-shot mode.");
+  }
 }
 
 main()
   .then(() => {
+    if (config.serviceMode) {
+      logger.info(
+        "Service mode is enabled; main() completed but process will remain running.",
+      );
+      return;
+    }
+
     logger.info("Scraper service run completed; exiting.");
     process.exit(0);
   })
