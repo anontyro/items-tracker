@@ -21,6 +21,7 @@ model Product {
   tracking      ProductTracking[]
   wishlistItems WishlistItem[]
   sources       ProductSource[]
+  images        ProductImage[]
 
   @@index([name])
   @@index([type])
@@ -39,6 +40,7 @@ model ProductSource {
 
   product        Product        @relation(fields: [productId], references: [id])
   priceHistory   PriceHistory[]
+  images         ProductImage[]
 
   @@index([productId])
   @@index([sourceName])
@@ -116,4 +118,29 @@ model BggGame {
 
   @@index([primaryName])
   @@index([name])
+}
+
+enum ImageStatus {
+  ACTIVE
+  MISSING
+  DELETED
+}
+
+model ProductImage {
+  id            String       @id @default(uuid())
+  productId     String?
+  bggId         String?
+  sourceId      String?
+  remoteImageUrl String
+  localPath     String?
+  status        ImageStatus  @default(ACTIVE)
+  lastCheckedAt DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  product Product?       @relation(fields: [productId], references: [id])
+  source  ProductSource? @relation(fields: [sourceId], references: [id])
+
+  @@index([bggId])
+  @@index([productId])
 }
