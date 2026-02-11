@@ -1,22 +1,22 @@
 {
   "siteId": "board-game-co-uk",
   "siteName": "Board Game Co UK",
-  "baseUrl": "https://www.board-game.co.uk",
-  "listPageUrl": "https://www.board-game.co.uk/category/board-games/?show=200&page=1",
+  "baseUrl": "https://zatu.com",
+  "listPageUrl": "https://zatu.com/collections/top-5000-board-games?page=1",
   "itemType": "board-game",
   "selectors": {
-    "productList": "li.zg-product",
-    "productName": ".zg-product-title h2 a",
-    "productPrice": ".zg-price-box-now",
-    "productAvailability": ".zg-product-notice span",
-    "productRrp": ".zg-price-box-was",
-    "productUrl": ".zg-product-title h2 a",
-    "productSku": "[data-sku]",
-    "productImageList": ".zg-product-image img",
-    "productImageDetail": ".zg-product-image img"
+    "productList": ".product-card",
+    "productName": ".product-card__title a",
+    "productPrice": ".f-price-item--sale",
+    "productAvailability": ".product__inventory-text",
+    "productRrp": ".f-price__sale .f-price-item--regular",
+    "productUrl": ".product-card__title a",
+    "productSku": "input[data-product-id]",
+    "productImageList": ".product-card__image img",
+    "productImageDetail": ".product-card__image img"
   },
   "rateLimitMs": 2000,
-  "paginationSelector": ".zg-paging a.bpf-page-link",
+  "paginationSelector": ".pagination a.pagination__item",
   "isActive": true,
   "followProductPageForImage": true
 }

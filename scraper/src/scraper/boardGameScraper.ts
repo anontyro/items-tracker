@@ -312,6 +312,8 @@ export async function* scrapeSiteWithPlaywright(
       const paginationLinkCount = await paginationLocator.count();
       let nextHref: string | null = null;
 
+      // First, try legacy behaviour: look for a link with a data-page attribute
+      // equal to the next page number. This supports older site configs.
       for (let i = 0; i < paginationLinkCount; i += 1) {
         const link = paginationLocator.nth(i);
         const pageAttr = await link.getAttribute("data-page");
@@ -321,6 +323,30 @@ export async function* scrapeSiteWithPlaywright(
             nextHref = hrefValue;
           }
           break;
+        }
+      }
+
+      // If no data-page links are present (e.g. Shopify-style pagination on
+      // Zatu), fall back to detecting an explicit "next" link.
+      if (!nextHref && paginationLinkCount > 0) {
+        for (let i = 0; i < paginationLinkCount; i += 1) {
+          const link = paginationLocator.nth(i);
+          const rel = (await link.getAttribute("rel")) ?? "";
+          const className = (await link.getAttribute("class")) ?? "";
+          const text = (await link.textContent())?.trim() ?? "";
+
+          const isNextLink =
+            rel === "next" ||
+            className.includes("pagination__item--next") ||
+            /^next$/i.test(text);
+
+          if (isNextLink) {
+            const hrefValue = await link.getAttribute("href");
+            if (hrefValue) {
+              nextHref = hrefValue;
+            }
+            break;
+          }
         }
       }
 
