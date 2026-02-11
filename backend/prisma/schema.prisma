@@ -143,4 +143,6 @@ model ProductImage {
 
   @@index([bggId])
   @@index([productId])
+  @@index([bggId, status, updatedAt])
+  @@index([productId, status, updatedAt])
 }
