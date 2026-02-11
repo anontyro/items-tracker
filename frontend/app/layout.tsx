@@ -1,3 +1,4 @@
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import AppShell from "../components/layout/AppShell";
 import { AppThemeProvider } from "../theme";
 import type { Metadata } from "next";
@@ -10,11 +11,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <AppThemeProvider>
-          <AppShell>{children}</AppShell>
-        </AppThemeProvider>
+        <AppRouterCacheProvider>
+          <AppThemeProvider>
+            <AppShell>{children}</AppShell>
+          </AppThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );
