@@ -103,13 +103,6 @@ export class ImagesService {
     const relativeImagePath = this.getRelativeImagePath(canonicalKey, ext);
     const fullPath = this.getFullPathFromLocalPath(relativeImagePath);
 
-    this.logger.log(
-      { productId: product.id, bggId: resolvedBggId, remoteImageUrl, fullPath },
-      "Saving image from scrape URL",
-    );
-
-    await this.downloadToFile(remoteImageUrl, fullPath);
-
     const where: { bggId?: string; productId?: string } = {};
     if (resolvedBggId) {
       where.bggId = resolvedBggId;
@@ -117,7 +110,32 @@ export class ImagesService {
       where.productId = product.id;
     }
 
-    const existing = await this.prisma.productImage.findFirst({ where });
+    const existing = await this.prisma.productImage.findFirst({
+      where,
+      orderBy: { updatedAt: "desc" },
+    });
+
+    if (
+      existing &&
+      existing.remoteImageUrl === remoteImageUrl &&
+      existing.status === ImageStatus.ACTIVE
+    ) {
+      const resolved = await this.resolveFileForImage(existing);
+      if (resolved) {
+        this.logger.debug(
+          { productId: product.id, bggId: resolvedBggId, remoteImageUrl },
+          "Image already up to date with existing local file; skipping download",
+        );
+        return existing;
+      }
+    }
+
+    this.logger.log(
+      { productId: product.id, bggId: resolvedBggId, remoteImageUrl, fullPath },
+      "Downloading image from scrape URL",
+    );
+
+    await this.downloadToFile(remoteImageUrl, fullPath);
 
     if (existing) {
       return this.prisma.productImage.update({
