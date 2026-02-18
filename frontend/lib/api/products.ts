@@ -2,6 +2,7 @@ export interface ProductSummary {
   id: string;
   name: string;
   type: string;
+  sources?: ProductSourceSummary[];
 }
 
 export interface ProductSearchResponse {
@@ -14,6 +15,9 @@ export interface ProductSourceSummary {
   sourceName: string;
   sourceUrl: string;
   sku?: string | null;
+  additionalData?: {
+    siteId?: string | null;
+  } | null;
 }
 
 export interface ProductDetail extends ProductSummary {
@@ -50,8 +54,9 @@ export async function fetchProducts(options: {
   q?: string;
   limit?: number;
   offset?: number;
+  siteId?: string;
 }): Promise<ProductSearchResponse> {
-  const { q = "", limit = 50, offset = 0 } = options;
+  const { q = "", limit = 50, offset = 0, siteId } = options;
 
   const url = new URL("/api/products", getBaseUrl());
   if (q) {
@@ -59,6 +64,9 @@ export async function fetchProducts(options: {
   }
   url.searchParams.set("limit", String(limit));
   url.searchParams.set("offset", String(offset));
+  if (siteId) {
+    url.searchParams.set("siteId", siteId);
+  }
 
   console.log("url is", url.toString());
 

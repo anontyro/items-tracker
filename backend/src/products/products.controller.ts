@@ -11,6 +11,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Controller("v1/products")
@@ -32,20 +33,32 @@ export class ProductsController {
     @Query("q") q?: string,
     @Query("limit") limitRaw?: string,
     @Query("offset") offsetRaw?: string,
+    @Query("siteId") siteId?: string,
   ) {
     this.assertApiKey(apiKey);
 
     const limit = Math.min(Math.max(Number(limitRaw) || 50, 1), 200);
     const offset = Math.max(Number(offsetRaw) || 0, 0);
 
-    const where = q
-      ? {
-          name: {
-            contains: q,
-            mode: "insensitive" as const,
+    const where: Prisma.ProductWhereInput = {};
+
+    if (q) {
+      where.name = {
+        contains: q,
+        mode: "insensitive",
+      };
+    }
+
+    if (siteId) {
+      where.sources = {
+        some: {
+          additionalData: {
+            path: ["siteId"],
+            equals: siteId,
           },
-        }
-      : {};
+        },
+      };
+    }
 
     const [items, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
@@ -53,6 +66,17 @@ export class ProductsController {
         orderBy: { name: "asc" },
         skip: offset,
         take: limit,
+        include: {
+          sources: {
+            select: {
+              id: true,
+              sourceName: true,
+              sourceUrl: true,
+              sku: true,
+              additionalData: true,
+            },
+          },
+        },
       }),
       this.prisma.product.count({ where }),
     ]);

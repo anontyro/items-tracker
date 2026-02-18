@@ -11,15 +11,20 @@ export async function GET(request: NextRequest) {
   const q = searchParams.get("q") ?? "";
   const limit = searchParams.get("limit") ?? "50";
   const offset = searchParams.get("offset") ?? "0";
+  const siteId = searchParams.get("siteId") ?? "";
 
   const backendBase = getBackendBaseUrl();
   const apiKey = process.env.FRONTEND_API_KEY || "";
 
-  const backendUrl = `${backendBase}/v1/products?q=${encodeURIComponent(
-    q
-  )}&limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const backendUrl = new URL("/v1/products", backendBase);
+  backendUrl.searchParams.set("q", q);
+  backendUrl.searchParams.set("limit", limit);
+  backendUrl.searchParams.set("offset", offset);
+  if (siteId) {
+    backendUrl.searchParams.set("siteId", siteId);
+  }
 
-  const res = await fetch(backendUrl, {
+  const res = await fetch(backendUrl.toString(), {
     headers: {
       "x-api-key": apiKey,
     },

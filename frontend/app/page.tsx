@@ -3,16 +3,20 @@
 import {
   Avatar,
   Button,
+  IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
+  Menu,
+  MenuItem,
   TextField,
 } from "@mui/material";
 import { Container, Stack, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { ProductSummary } from "../lib/api/products";
 import Watchlist from "../components/watchlist/Watchlist";
 import { useProductSearch } from "../lib/hooks/useProductSearch";
@@ -20,6 +24,137 @@ import { useProductSearch } from "../lib/hooks/useProductSearch";
 type WatchlistItem = {
   id: string;
   name: string;
+};
+
+type SiteOption = {
+  siteId: string;
+  label: string;
+  href: string;
+};
+
+const SITE_ROUTE_CONFIG: Record<
+  string,
+  {
+    slug: string;
+    label: string;
+  }
+> = {
+  "board-game-co-uk": {
+    slug: "zatu-uk",
+    label: "Zatu UK",
+  },
+  "clownfish-games": {
+    slug: "clownfish-games",
+    label: "Clownfish Games",
+  },
+};
+
+function getSiteOptions(product: ProductSummary): SiteOption[] {
+  const sources = product.sources ?? [];
+  const seen = new Set<string>();
+  const options: SiteOption[] = [];
+
+  for (const source of sources) {
+    const data = source.additionalData as
+      | { siteId?: string | null }
+      | null
+      | undefined;
+    const siteId = data?.siteId ?? undefined;
+    if (!siteId || seen.has(siteId)) {
+      continue;
+    }
+    seen.add(siteId);
+
+    const config = SITE_ROUTE_CONFIG[siteId] ?? {
+      slug: "zatu-uk",
+      label: source.sourceName || siteId,
+    };
+
+    options.push({
+      siteId,
+      label: config.label,
+      href: `/items/${config.slug}/${product.id}`,
+    });
+  }
+
+  return options;
+}
+
+type ProductActionsProps = {
+  product: ProductSummary;
+  isWatched: boolean;
+  onToggleWatchlist: () => void;
+};
+
+const ProductActions: React.FC<ProductActionsProps> = ({
+  product,
+  isWatched,
+  onToggleWatchlist,
+}) => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const siteOptions = getSiteOptions(product);
+
+  let primaryHref: string | undefined;
+  let primaryLabel = "View details";
+
+  if (siteOptions.length === 1) {
+    primaryHref = siteOptions[0].href;
+    primaryLabel = `View on ${siteOptions[0].label}`;
+  } else if (siteOptions.length === 0) {
+    // Fallback to the original Zatu route when we don't have explicit site information.
+    primaryHref = `/items/zatu-uk/${product.id}`;
+  }
+
+  return (
+    <Stack direction="row" spacing={1}>
+      <Button
+        variant={isWatched ? "contained" : "outlined"}
+        size="small"
+        onClick={onToggleWatchlist}
+      >
+        {isWatched ? "Remove from watchlist" : "Add to watchlist"}
+      </Button>
+
+      {siteOptions.length <= 1 ? (
+        <Button
+          variant="outlined"
+          size="small"
+          component={Link}
+          href={primaryHref!}
+        >
+          {primaryLabel}
+        </Button>
+      ) : (
+        <>
+          <IconButton
+            size="small"
+            aria-label="View details on retailer sites"
+            onClick={(event) => setAnchorEl(event.currentTarget)}
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={() => setAnchorEl(null)}
+          >
+            {siteOptions.map((option) => (
+              <MenuItem
+                key={option.siteId}
+                component={Link}
+                href={option.href}
+                onClick={() => setAnchorEl(null)}
+              >
+                {option.label}
+              </MenuItem>
+            ))}
+          </Menu>
+        </>
+      )}
+    </Stack>
+  );
 };
 
 function ProductAvatar({ product }: { product: ProductSummary }) {
@@ -252,25 +387,11 @@ export default function HomePage() {
                       boxShadow: 1,
                     }}
                     secondaryAction={
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          variant={isWatched ? "contained" : "outlined"}
-                          size="small"
-                          onClick={() => toggleWatchlist(product)}
-                        >
-                          {isWatched
-                            ? "Remove from watchlist"
-                            : "Add to watchlist"}
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          component={Link}
-                          href={`/items/zatu-uk/${product.id}`}
-                        >
-                          View details
-                        </Button>
-                      </Stack>
+                      <ProductActions
+                        product={product}
+                        isWatched={isWatched}
+                        onToggleWatchlist={() => toggleWatchlist(product)}
+                      />
                     }
                   >
                     <ListItemAvatar>

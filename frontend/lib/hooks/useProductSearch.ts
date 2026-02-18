@@ -12,13 +12,14 @@ export interface UseProductSearchParams {
   q?: string;
   limit?: number;
   offset?: number;
+  siteId?: string;
 }
 
 export function useProductSearch(params: UseProductSearchParams) {
-  const { q = "", limit = 50, offset = 0 } = params;
+  const { q = "", limit = 50, offset = 0, siteId } = params;
 
   return useQuery<ProductSearchResponse, Error>({
-    queryKey: ["products", { q, limit, offset }],
-    queryFn: () => fetchProducts({ q, limit, offset }),
+    queryKey: ["products", { q, limit, offset, siteId }],
+    queryFn: () => fetchProducts({ q, limit, offset, siteId }),
   });
 }
