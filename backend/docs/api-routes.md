@@ -19,6 +19,9 @@
 - +### `GET /v1/products`
 - +- Search and paginate products.
   +- Query params: `q`, `limit`, `offset`.
+- +### `GET /v1/products/grouped`
+- +- Group products by `bggId` (falling back to product ID when `bggId` is null) and return merged sources per group.
+  +- Query params: `q`, `siteId`.
 - +### `GET /v1/products/:id`
 - +- Fetch a single product by ID, including its sources.
 - +### `GET /v1/products/:id/history`
