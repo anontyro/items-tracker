@@ -9,9 +9,11 @@ import {
   Post,
   StreamableFile,
   UnauthorizedException,
+  UseGuards,
 } from "@nestjs/common";
 
 import { ImagesService, SaveImageFromUrlInput } from "./images.service";
+import { FrontendApiKeyGuard } from "../common/frontend-api-key.guard";
 import { createReadStream } from "fs";
 
 @Controller()
@@ -19,13 +21,6 @@ export class ImagesController {
   private readonly logger = new Logger(ImagesController.name);
 
   constructor(private readonly imagesService: ImagesService) {}
-
-  private assertFrontendApiKey(apiKey: string | undefined): void {
-    const expectedKey = process.env.FRONTEND_API_KEY;
-    if (!expectedKey || apiKey !== expectedKey) {
-      throw new UnauthorizedException("Invalid API key");
-    }
-  }
 
   private assertScraperApiKey(apiKey: string | undefined): void {
     const expectedKey = process.env.SCRAPER_API_KEY;
@@ -60,13 +55,9 @@ export class ImagesController {
     };
   }
 
+  @UseGuards(FrontendApiKeyGuard)
   @Get("v1/games/:id/image")
-  async getGameImage(
-    @Headers("x-api-key") apiKey: string | undefined,
-    @Param("id") id: string,
-  ): Promise<StreamableFile> {
-    this.assertFrontendApiKey(apiKey);
-
+  async getGameImage(@Param("id") id: string): Promise<StreamableFile> {
     const image = await this.imagesService.getCanonicalImageForProduct(id);
 
     if (!image) {
