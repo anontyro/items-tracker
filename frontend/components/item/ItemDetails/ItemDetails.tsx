@@ -2,6 +2,7 @@
 
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Grid,
@@ -10,6 +11,7 @@ import {
   Stack,
   Tab,
   Tabs,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -19,9 +21,11 @@ import type {
 } from "../../../lib/api/products";
 import { useEffect, useState } from "react";
 
+import EditIcon from "@mui/icons-material/Edit";
 import Image from "next/image";
 import ItemHistory from "../ItemHistory/ItemHistory";
 import bggIcon from "../../../static/images/icons/bgg-icon.png";
+import { useUpdateProductBggId } from "../../../lib/hooks/useUpdateProductBggId";
 import zatuIcon from "../../../static/images/icons/zatu-logo-orange-white.png";
 
 const formatDate = (value: string) => {
@@ -44,14 +48,46 @@ const formatDateTime = (value: string) => {
 
 type DetailTabProps = {
   product: ProductDetail;
+  currentBggId: string | null;
+  isEditingBgg: boolean;
+  draftBggId: string;
+  onDraftChange: (value: string) => void;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
+  isSaving: boolean;
 };
 
-const DetailTab: React.FC<DetailTabProps> = ({ product }) => {
+const DetailTab: React.FC<DetailTabProps> = ({
+  product,
+  currentBggId,
+  isEditingBgg,
+  draftBggId,
+  onDraftChange,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  isSaving,
+}) => {
   return (
     <Box>
-      <Typography variant="subtitle1" gutterBottom>
-        Details
-      </Typography>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 1 }}
+      >
+        <Typography variant="subtitle1">Details</Typography>
+        <Tooltip title={isEditingBgg ? "Cancel editing BGG ID" : "Edit BGG ID"}>
+          <IconButton
+            size="small"
+            aria-label={isEditingBgg ? "Cancel editing BGG ID" : "Edit BGG ID"}
+            onClick={isEditingBgg ? onCancelEdit : onStartEdit}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
       <Stack spacing={0.5}>
         <Typography variant="body2" color="text.secondary">
           Product ID: {product.id}
@@ -59,10 +95,43 @@ const DetailTab: React.FC<DetailTabProps> = ({ product }) => {
         <Typography variant="body2" color="text.secondary">
           Type: {product.type}
         </Typography>
-        {product.bggId && (
+        {!isEditingBgg && currentBggId && (
           <Typography variant="body2" color="text.secondary">
-            BGG ID: {product.bggId}
+            BGG ID: {currentBggId}
           </Typography>
+        )}
+        {isEditingBgg && (
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ mt: 0.5 }}
+          >
+            <TextField
+              size="small"
+              label="BGG ID"
+              variant="outlined"
+              value={draftBggId}
+              onChange={(event) => onDraftChange(event.target.value)}
+              sx={{ maxWidth: 200 }}
+            />
+            <Button
+              size="small"
+              variant="contained"
+              onClick={onSaveEdit}
+              disabled={isSaving}
+            >
+              Save
+            </Button>
+            <Button
+              size="small"
+              variant="text"
+              onClick={onCancelEdit}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+          </Stack>
         )}
         <Typography variant="body2" color="text.secondary">
           Created at: {formatDateTime(product.createdAt)}
@@ -115,6 +184,14 @@ const ItemDetails: React.FC<{
   const [tab, setTab] = useState(0);
   const [isWatched, setIsWatched] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [currentBggId, setCurrentBggId] = useState<string | null>(
+    product.bggId ?? null,
+  );
+  const [isEditingBgg, setIsEditingBgg] = useState(false);
+  const [draftBggId, setDraftBggId] = useState<string>(product.bggId ?? "");
+  const [adminApiKey, setAdminApiKey] = useState<string | null>(null);
+
+  const updateBggMutation = useUpdateProductBggId();
 
   const historyItems = productHistory?.items ?? [];
   const latestPoint = historyItems.length > 0 ? historyItems[0] : undefined;
@@ -275,6 +352,17 @@ const ItemDetails: React.FC<{
     }
   }, [productId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedAdminKey = window.localStorage.getItem("adminApiKey");
+    if (storedAdminKey) {
+      setAdminApiKey(storedAdminKey);
+    }
+  }, []);
+
   const syncWatchlist = (nextWatched: boolean) => {
     if (typeof window === "undefined") {
       return;
@@ -308,6 +396,52 @@ const ItemDetails: React.FC<{
     }
 
     window.localStorage.setItem("watchlist", JSON.stringify(items));
+  };
+
+  const handleStartEditBgg = () => {
+    if (typeof window !== "undefined" && !adminApiKey) {
+      const key = window.prompt("Enter admin API key to edit BGG ID:");
+      if (!key) {
+        return;
+      }
+      setAdminApiKey(key);
+      window.localStorage.setItem("adminApiKey", key);
+    }
+
+    setDraftBggId(currentBggId ?? "");
+    setIsEditingBgg(true);
+  };
+
+  const handleCancelEditBgg = () => {
+    setIsEditingBgg(false);
+    setDraftBggId(currentBggId ?? "");
+  };
+
+  const handleSaveBgg = async () => {
+    if (!adminApiKey) {
+      return;
+    }
+
+    const trimmed = draftBggId.trim();
+    const nextBggId = trimmed === "" ? null : trimmed;
+
+    try {
+      const updated = await updateBggMutation.mutateAsync({
+        productId,
+        bggId: nextBggId,
+        adminApiKey,
+      });
+      setCurrentBggId(updated.bggId ?? null);
+      setIsEditingBgg(false);
+    } catch (error) {
+      if (typeof window !== "undefined") {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        window.alert(`Failed to update BGG ID: ${message}`);
+      }
+      window.localStorage.removeItem("adminApiKey");
+      setAdminApiKey(null);
+    }
   };
 
   const handleToggleWatchlist = () => {
@@ -467,11 +601,11 @@ const ItemDetails: React.FC<{
                   </IconButton>
                 </Tooltip>
               )}
-              {product.bggId && (
+              {currentBggId && (
                 <Tooltip title="View on BoardGameGeek">
                   <IconButton
                     component={MuiLink}
-                    href={`https://boardgamegeek.com/boardgame/${product.bggId}`}
+                    href={`https://boardgamegeek.com/boardgame/${currentBggId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     size="small"
@@ -499,7 +633,19 @@ const ItemDetails: React.FC<{
           <Tab label="Statistics" />
         </Tabs>
         <CardContent>
-          {tab === 0 && <DetailTab product={product} />}
+          {tab === 0 && (
+            <DetailTab
+              product={product}
+              currentBggId={currentBggId}
+              isEditingBgg={isEditingBgg}
+              draftBggId={draftBggId}
+              onDraftChange={setDraftBggId}
+              onStartEdit={handleStartEditBgg}
+              onCancelEdit={handleCancelEditBgg}
+              onSaveEdit={handleSaveBgg}
+              isSaving={updateBggMutation.isPending}
+            />
+          )}
 
           {tab === 1 && (
             <Box>
