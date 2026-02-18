@@ -2,18 +2,17 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   Logger,
   NotFoundException,
   Param,
   Post,
   StreamableFile,
-  UnauthorizedException,
   UseGuards,
 } from "@nestjs/common";
 
 import { ImagesService, SaveImageFromUrlInput } from "./images.service";
 import { FrontendApiKeyGuard } from "../common/frontend-api-key.guard";
+import { ScraperApiKeyGuard } from "../common/scraper-api-key.guard";
 import { createReadStream } from "fs";
 
 @Controller()
@@ -22,20 +21,9 @@ export class ImagesController {
 
   constructor(private readonly imagesService: ImagesService) {}
 
-  private assertScraperApiKey(apiKey: string | undefined): void {
-    const expectedKey = process.env.SCRAPER_API_KEY;
-    if (!expectedKey || apiKey !== expectedKey) {
-      throw new UnauthorizedException("Invalid API key");
-    }
-  }
-
+  @UseGuards(ScraperApiKeyGuard)
   @Post("v1/images/from-scrape")
-  async saveFromScrape(
-    @Headers("x-api-key") apiKey: string | undefined,
-    @Body() body: SaveImageFromUrlInput,
-  ) {
-    this.assertScraperApiKey(apiKey);
-
+  async saveFromScrape(@Body() body: SaveImageFromUrlInput) {
     const { sourceUrl, remoteImageUrl } = body;
 
     this.logger.log(

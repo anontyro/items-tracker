@@ -1,14 +1,8 @@
-import {
-  Body,
-  Controller,
-  Headers,
-  Logger,
-  Post,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { Body, Controller, Logger, Post, UseGuards } from "@nestjs/common";
 
 import { PriceSnapshotBatchDto } from "./dto/price-snapshot.dto";
 import { PriceHistoryService } from "./price-history.service";
+import { ScraperApiKeyGuard } from "../common/scraper-api-key.guard";
 
 @Controller("v1/price-history")
 export class PriceHistoryController {
@@ -16,16 +10,9 @@ export class PriceHistoryController {
 
   constructor(private readonly priceHistoryService: PriceHistoryService) {}
 
+  @UseGuards(ScraperApiKeyGuard)
   @Post("batch")
-  async ingestBatch(
-    @Headers("x-api-key") apiKey: string | undefined,
-    @Body() body: PriceSnapshotBatchDto
-  ) {
-    const expectedKey = process.env.SCRAPER_API_KEY;
-    if (!expectedKey || apiKey !== expectedKey) {
-      throw new UnauthorizedException("Invalid API key");
-    }
-
+  async ingestBatch(@Body() body: PriceSnapshotBatchDto) {
     const count = body.snapshots?.length ?? 0;
 
     this.logger.log({ count }, "Received price snapshot batch");
