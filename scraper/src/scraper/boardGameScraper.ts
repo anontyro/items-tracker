@@ -334,11 +334,13 @@ export async function* scrapeSiteWithPlaywright(
           const rel = (await link.getAttribute("rel")) ?? "";
           const className = (await link.getAttribute("class")) ?? "";
           const text = (await link.textContent())?.trim() ?? "";
+          const ariaLabel = (await link.getAttribute("aria-label")) ?? "";
 
           const isNextLink =
             rel === "next" ||
             className.includes("pagination__item--next") ||
-            /^next$/i.test(text);
+            /^next$/i.test(text) ||
+            /next page/i.test(ariaLabel);
 
           if (isNextLink) {
             const hrefValue = await link.getAttribute("href");
