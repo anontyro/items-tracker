@@ -11,6 +11,20 @@ export interface ProductSearchResponse {
   total: number;
 }
 
+export interface GroupedProductItem {
+  groupKey: string;
+  bggId: string | null;
+  name: string;
+  type: string;
+  products: ProductDetail[];
+  sources: ProductSourceSummary[];
+}
+
+export interface GroupedProductsResponse {
+  items: GroupedProductItem[];
+  total: number;
+}
+
 export interface ProductSourceSummary {
   id: string;
   sourceName: string;
@@ -77,6 +91,35 @@ export async function fetchProducts(options: {
 
   if (!res.ok) {
     throw new Error(`Failed to fetch products: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function fetchGroupedProducts(options: {
+  q?: string;
+  siteId?: string;
+  bggId?: string;
+}): Promise<GroupedProductsResponse> {
+  const { q = "", siteId, bggId } = options;
+
+  const url = new URL("/api/products/grouped", getBaseUrl());
+  if (q) {
+    url.searchParams.set("q", q);
+  }
+  if (siteId) {
+    url.searchParams.set("siteId", siteId);
+  }
+  if (bggId) {
+    url.searchParams.set("bggId", bggId);
+  }
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch grouped products: ${res.status}`);
   }
 
   return res.json();

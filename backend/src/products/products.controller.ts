@@ -44,8 +44,13 @@ export class ProductsController {
   async getGroupedProducts(
     @Query("q") q?: string,
     @Query("siteId") siteId?: string,
+    @Query("bggId") bggId?: string,
   ) {
-    const result = await this.productsService.getGroupedProducts({ q, siteId });
+    const result = await this.productsService.getGroupedProducts({
+      q,
+      siteId,
+      bggId,
+    });
 
     return result;
   }

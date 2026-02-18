@@ -15,6 +15,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import ItemHistory, { MultiSiteItemHistory } from "../ItemHistory/ItemHistory";
 import type {
   ProductDetail,
   ProductHistoryResponse,
@@ -23,7 +24,6 @@ import { useEffect, useState } from "react";
 
 import EditIcon from "@mui/icons-material/Edit";
 import Image from "next/image";
-import ItemHistory from "../ItemHistory/ItemHistory";
 import bggIcon from "../../../static/images/icons/bgg-icon.png";
 import { useUpdateProductBggId } from "../../../lib/hooks/useUpdateProductBggId";
 import zatuIcon from "../../../static/images/icons/zatu-logo-orange-white.png";
@@ -649,7 +649,11 @@ const ItemDetails: React.FC<{
 
           {tab === 1 && (
             <Box>
-              <ItemHistory id={productId} />
+              {currentBggId ? (
+                <MultiSiteItemHistory id={productId} bggId={currentBggId} />
+              ) : (
+                <ItemHistory id={productId} />
+              )}
             </Box>
           )}
 

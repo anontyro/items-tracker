@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
 
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
@@ -66,8 +66,9 @@ export class ProductsService {
   async getGroupedProducts(params: {
     q?: string;
     siteId?: string;
+    bggId?: string;
   }): Promise<{ items: any[]; total: number }> {
-    const { q, siteId } = params;
+    const { q, siteId, bggId } = params;
 
     const where: Prisma.ProductWhereInput = {};
 
@@ -113,7 +114,7 @@ export class ProductsService {
         name: string;
         type: string;
         products: typeof products;
-        sources: typeof products[number]["sources"];
+        sources: (typeof products)[number]["sources"];
       }
     >();
 
@@ -204,10 +205,13 @@ export class ProductsService {
     return { items };
   }
 
-  async setProductBggId(id: string, body: {
-    bggId?: string | null;
-    bggCanonicalName?: string | null;
-  }) {
+  async setProductBggId(
+    id: string,
+    body: {
+      bggId?: string | null;
+      bggCanonicalName?: string | null;
+    },
+  ) {
     const { bggId, bggCanonicalName } = body;
 
     const updated = await this.prisma.product.update({
