@@ -35,6 +35,18 @@ async function main() {
   const allSites = await loadSiteConfigs();
   const activeSites = getActiveSiteConfigs(allSites);
 
+  const targetSiteIdsEnv =
+    process.env.SCRAPER_SITE_IDS ?? process.env.SCRAPER_SITE_ID ?? "";
+  const targetSiteIds = targetSiteIdsEnv
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  const sitesToScrape =
+    targetSiteIds.length > 0
+      ? activeSites.filter((site) => targetSiteIds.includes(site.siteId))
+      : activeSites;
+
   const disableSqlite =
     process.env.SCRAPER_DISABLE_SQLITE === "1" ||
     process.env.SCRAPER_DISABLE_SQLITE === "true";
@@ -43,11 +55,13 @@ async function main() {
     {
       siteCount: allSites.length,
       activeSiteIds: activeSites.map((s) => s.siteId),
+      targetSiteIds,
+      scrapingSiteIds: sitesToScrape.map((s) => s.siteId),
     },
     "Loaded scraper site configurations",
   );
 
-  for (const site of activeSites) {
+  for (const site of sitesToScrape) {
     logger.info({ siteId: site.siteId }, "Starting sample scrape for site");
 
     const runScrapedAt = new Date().toISOString();

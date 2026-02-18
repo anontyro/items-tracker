@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "scrape:clownfish": "SCRAPER_SITE_ID=clownfish-games ts-node-dev --respawn --transpile-only src/index.ts",
     "sync-worker": "ts-node-dev --respawn --transpile-only src/workers/priceHistorySyncWorker.ts",
     "sync-pending": "ts-node-dev --respawn --transpile-only src/tools/syncPendingRuns.ts"
   },

@@ -1,0 +1,22 @@
+{
+  "siteId": "clownfish-games",
+  "siteName": "Clownfish Games",
+  "baseUrl": "https://clownfish-games.co.uk",
+  "listPageUrl": "https://clownfish-games.co.uk/collections/all?page=1",
+  "itemType": "board-game",
+  "selectors": {
+    "productList": "li.grid__item",
+    "productName": "h3.card__heading.h5 a.full-unstyled-link",
+    "productPrice": "span.price-item.price-item--sale.price-item--last",
+    "productAvailability": "button.quick-add__submit",
+    "productRrp": "s.price-item.price-item--regular",
+    "productUrl": "h3.card__heading.h5 a.full-unstyled-link",
+    "productSku": "[data-sku]",
+    "productImageList": "img",
+    "productImageDetail": "img"
+  },
+  "rateLimitMs": 2000,
+  "paginationSelector": "nav.pagination a",
+  "isActive": true,
+  "followProductPageForImage": false
+}
