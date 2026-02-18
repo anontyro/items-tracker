@@ -194,6 +194,50 @@ export default function HomePage() {
   const limit = 50;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  const aggregateProducts = (
+    itemsToAggregate: ProductSummary[],
+  ): ProductSummary[] => {
+    const byKey = new Map<string, ProductSummary>();
+
+    for (const product of itemsToAggregate) {
+      const key = (product as any).bggId ?? null;
+      const groupingKey = key ?? product.id;
+
+      const existing = byKey.get(groupingKey);
+
+      const sources = product.sources ?? [];
+
+      if (!existing) {
+        byKey.set(groupingKey, {
+          ...product,
+          sources: sources,
+        });
+        continue;
+      }
+
+      const existingSources = existing.sources ?? [];
+      const mergedSourceMap = new Map<
+        string,
+        (typeof existingSources)[number]
+      >();
+      for (const source of existingSources) {
+        mergedSourceMap.set(source.id, source);
+      }
+      for (const source of sources) {
+        if (!mergedSourceMap.has(source.id)) {
+          mergedSourceMap.set(source.id, source);
+        }
+      }
+
+      byKey.set(groupingKey, {
+        ...existing,
+        sources: Array.from(mergedSourceMap.values()),
+      });
+    }
+
+    return Array.from(byKey.values());
+  };
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setSearch(searchInput);
@@ -274,20 +318,16 @@ export default function HomePage() {
 
     setTotal(data.total);
 
+    const aggregatedPageItems = aggregateProducts(data.items);
+
     if (offset === 0) {
-      setItems(data.items);
+      setItems(aggregatedPageItems);
       return;
     }
 
     setItems((prev) => {
-      const existingIds = new Set(prev.map((item) => item.id));
-      const merged: ProductSummary[] = [...prev];
-      for (const item of data.items) {
-        if (!existingIds.has(item.id)) {
-          merged.push(item);
-        }
-      }
-      return merged;
+      const aggregated = aggregateProducts([...prev, ...aggregatedPageItems]);
+      return aggregated;
     });
   }, [data, offset]);
 
@@ -307,7 +347,11 @@ export default function HomePage() {
         return;
       }
 
-      if (items.length === 0 || items.length >= total) {
+      if (items.length === 0) {
+        return;
+      }
+
+      if (offset + limit >= total) {
         return;
       }
 

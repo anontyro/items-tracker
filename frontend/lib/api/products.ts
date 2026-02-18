@@ -3,6 +3,7 @@ export interface ProductSummary {
   name: string;
   type: string;
   sources?: ProductSourceSummary[];
+  bggId?: string | null;
 }
 
 export interface ProductSearchResponse {
