@@ -25,12 +25,12 @@
   - Add or confirm support for targeted runs where a specific `siteId` can be passed to scrape only `"clownfish-games"`.
   - Verify that environment/config and CLI or job entrypoints support running a single-site scrape for debugging.
 
-- [ ] 4. Extend backend to recognise clownfish-games as a source
+- [x] 4. Extend backend to recognise clownfish-games as a source
   - Add `"clownfish-games"` to any enums, constants, or configuration representing supported sites.
   - Confirm that the bulk ingest API correctly records clownfish data with the new site ID.
   - Ensure any site-based filters, aggregations, or reporting paths include the new site.
 
-- [ ] 5. Implement product linking for clownfish priceHistory rows
+- [x] 5. Implement product linking for clownfish priceHistory rows
   - On ingest of clownfish price data, determine the canonical `Product` to link to using the following rules:
     - If `bggId` is present on the incoming record:
       - Look up an existing `Product` by `bggId` and link the new `productHistory` rows to that `productId` when found.
@@ -41,29 +41,29 @@
   - Ensure that `productHistory` rows always retain both `productId` and `bggId` (when available) so that future reconciliation is possible.
   - Guarantee that no clownfish price data is dropped due to failed linkage; worst case should be creation of a new `Product`.
 
-- [ ] 6. Verify clownfish integration with aggregate `/items` data
+- [x] 6. Verify clownfish integration with aggregate `/items` data
   - Review the backend endpoint(s) that power the frontend `/items` list.
   - Confirm that clownfish `productHistory` entries are included in the aggregate dataset.
   - Ensure any site/source indicators or filters treat `"clownfish-games"` consistently with other sites (e.g. zatu, board-game-co-uk).
 
-- [ ] 7. Add `items/clownfish-games` list page (frontend)
+- [x] 7. Add `items/clownfish-games` list page (frontend)
   - Under the frontend app routes, add a new route `items/clownfish-games`.
   - Mirror the implementation of `items/zatu-uk`:
     - Use the same list layout, columns, and sorting where applicable.
     - Scope data fetching to `sourceSite = "clownfish-games"` (or equivalent filter supported by the backend).
   - Display product name, current price, site, and any other standard fields already surfaced for zatu.
 
-- [ ] 8. Add `items/clownfish-games/[itemId]` detail page (frontend)
+- [x] 8. Add `items/clownfish-games/[itemId]` detail page (frontend)
   - Add a dynamic route `items/clownfish-games/[itemId]` mirroring `items/zatu-uk/[itemId]`.
   - Fetch the product and its price history specific to clownfish-games from the backend.
   - Reuse existing components/patterns for displaying item details (e.g. price history charts, metadata), adjusting only the site filter as needed.
 
-- [ ] 9. Confirm `/items` flat list behaviour with clownfish data
+- [x] 9. Confirm `/items` flat list behaviour with clownfish data
   - Verify that the existing `/items` route automatically includes clownfish data from the aggregated backend endpoint.
   - Ensure the UI clearly indicates the source site for each row so clownfish entries can be distinguished.
   - If there is an existing site filter (dropdown, chips, etc.), ensure `"clownfish-games"` appears as an option and behaves as expected.
 
-- [ ] 10. Enhance scrape logging and metadata for clownfish-games
+- [x] 10. Enhance scrape logging and metadata for clownfish-games
   - Ensure that each clownfish scrape run logs structured metadata including:
     - `siteId` ("clownfish-games"), a job or run identifier, and `scrapeTimestamp`.
     - Total number of products scraped.
@@ -104,14 +104,8 @@
 
 ## Next steps
 
-- **Backend integration**
-  - Complete tasks 4–6 to ensure clownfish data is fully recognised as a source, correctly linked to canonical `Product` records (via `bggId` then fuzzy match), and included in the aggregate `/items` dataset.
-
-- **Frontend pages**
-  - Implement tasks 7–9 to add `items/clownfish-games` and `items/clownfish-games/[itemId]`, and confirm `/items` shows clownfish entries in the flat list with correct site labelling and filtering.
-
 - **System dashboard & monitoring**
-  - Implement tasks 10–12 to expose per-site scrape status from the backend and surface it in `system/dashboard`, including clownfish, zatu, and board-game-co-uk.
+  - Implement tasks 11–12 to expose per-site scrape status from the backend and surface it in `system/dashboard`, including clownfish, zatu, and board-game-co-uk.
 
 - **Testing**
   - Finish task 13 by adding backend and frontend tests around product linking, new clownfish pages, and the system dashboard, building on the existing `scrape:clownfish` script for scraper validation.

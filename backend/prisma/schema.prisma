@@ -146,3 +146,22 @@ model ProductImage {
   @@index([bggId, status, updatedAt])
   @@index([productId, status, updatedAt])
 }
+
+enum ScrapeRunStatus {
+  SUCCESS
+  FAILURE
+}
+
+model ScrapeRun {
+  id           String          @id @default(uuid())
+  siteId       String
+  status       ScrapeRunStatus
+  startedAt    DateTime
+  finishedAt   DateTime
+  itemCount    Int
+  errorMessage String?
+  runId        String?
+
+  @@index([siteId, finishedAt])
+  @@index([siteId, status, finishedAt])
+}
