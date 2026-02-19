@@ -452,6 +452,23 @@ const ItemDetails: React.FC<{
     });
   };
 
+  const siteLinks =
+    product.sources?.reduce(
+      (acc, source) => {
+        const siteId = source.additionalData?.siteId ?? source.sourceName;
+        if (!siteId || acc.some((entry) => entry.siteId === siteId)) {
+          return acc;
+        }
+        acc.push({
+          siteId,
+          siteName: source.sourceName,
+          url: source.sourceUrl,
+        });
+        return acc;
+      },
+      [] as { siteId: string; siteName: string; url: string }[],
+    ) ?? [];
+
   return (
     <Box>
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -581,26 +598,66 @@ const ItemDetails: React.FC<{
               spacing={1}
               alignItems="center"
             >
-              {product.sources && product.sources.length > 0 && (
-                <Tooltip title="View on retailer site">
-                  <IconButton
-                    component={MuiLink}
-                    href={product.sources[0].sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="small"
-                    sx={{ p: 0.25 }}
-                    aria-label="View on retailer site"
-                  >
-                    <Image
-                      src={zatuIcon}
-                      alt="Retailer link"
-                      width={35}
-                      height={20}
-                    />
-                  </IconButton>
-                </Tooltip>
-              )}
+              {siteLinks.map((site) => {
+                if (site.siteId === "board-game-co-uk") {
+                  return (
+                    <Tooltip title="View on Zatu" key={site.siteId}>
+                      <IconButton
+                        component={MuiLink}
+                        href={site.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        sx={{ p: 0.25 }}
+                        aria-label="View on Zatu"
+                      >
+                        <Image
+                          src={zatuIcon}
+                          alt="Zatu link"
+                          width={35}
+                          height={20}
+                        />
+                      </IconButton>
+                    </Tooltip>
+                  );
+                }
+
+                if (site.siteId === "clownfish-games") {
+                  return (
+                    <Tooltip title="View on Clownfish Games" key={site.siteId}>
+                      <IconButton
+                        component={MuiLink}
+                        href={site.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        sx={{ p: 0.5 }}
+                        aria-label="View on Clownfish Games"
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Clownfish
+                        </Typography>
+                      </IconButton>
+                    </Tooltip>
+                  );
+                }
+
+                return (
+                  <Tooltip title={`View on ${site.siteName}`} key={site.siteId}>
+                    <IconButton
+                      component={MuiLink}
+                      href={site.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="small"
+                      sx={{ p: 0.5 }}
+                      aria-label={`View on ${site.siteName}`}
+                    >
+                      <Typography variant="body2">{site.siteName}</Typography>
+                    </IconButton>
+                  </Tooltip>
+                );
+              })}
               {currentBggId && (
                 <Tooltip title="View on BoardGameGeek">
                   <IconButton

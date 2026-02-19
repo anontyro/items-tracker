@@ -116,6 +116,12 @@ export async function* scrapeSiteWithPlaywright(
       : 1;
   let currentPage = 1;
   let nextUrl: string | null = siteConfig.listPageUrl;
+  const visitedListPageUrls = new Set<string>();
+  // For some Shopify-based sites (like clownfish-games), the visible pagination
+  // controls can loop between a small set of URLs even though many more pages
+  // exist. For those cases we derive the total page count from the "X products"
+  // text and then drive pagination purely via the ?page=N query parameter.
+  let derivedTotalPages: number | null = null;
 
   try {
     while (nextUrl && (!hasMaxPages || currentPage <= maxPages)) {
@@ -123,6 +129,17 @@ export async function* scrapeSiteWithPlaywright(
         { siteId: siteConfig.siteId, page: currentPage, url: nextUrl },
         "Scraping product list page",
       );
+
+      // Guard against accidental pagination loops (e.g. bouncing between
+      // the same two list URLs). If we've already seen this URL, stop.
+      if (visitedListPageUrls.has(nextUrl)) {
+        logger.warn(
+          { siteId: siteConfig.siteId, page: currentPage, url: nextUrl },
+          "Detected previously visited list page URL; stopping pagination to avoid loop",
+        );
+        break;
+      }
+      visitedListPageUrls.add(nextUrl);
 
       try {
         await gotoWithRetry(page, nextUrl, logger, {
@@ -174,6 +191,47 @@ export async function* scrapeSiteWithPlaywright(
         },
         "Found products on page",
       );
+
+      // For clownfish-games specifically, attempt to derive the total number of
+      // pages from the "X products" text. Once we know how many products exist
+      // and how many we see per page, we can step page=1..N directly without
+      // relying on potentially confusing pagination controls.
+      if (
+        siteConfig.siteId === "clownfish-games" &&
+        derivedTotalPages === null &&
+        productCount > 0
+      ) {
+        try {
+          const totalCountLocator = page.locator("#ProductCountDesktop");
+          if (await totalCountLocator.count()) {
+            const totalText = (await totalCountLocator.textContent()) ?? "";
+            // e.g. "1169 products"
+            const match = totalText.match(/(\d[\d,]*)\s+products/i);
+            if (match) {
+              const totalRaw = match[1].replace(/,/g, "");
+              const total = Number(totalRaw);
+              if (Number.isFinite(total) && total > 0) {
+                const pages = Math.ceil(total / productCount);
+                if (pages > 0) {
+                  derivedTotalPages = pages;
+                  logger.info(
+                    {
+                      siteId: siteConfig.siteId,
+                      totalProducts: total,
+                      productsPerPage: productCount,
+                      derivedTotalPages: pages,
+                    },
+                    "Derived total pages for site from product count",
+                  );
+                }
+              }
+            }
+          }
+        } catch {
+          // If this heuristic fails, we'll fall back to generic pagination
+          // handling below.
+        }
+      }
 
       if (currentPage >= startPage) {
         for (let index = 0; index < productCount; index += 1) {
@@ -308,6 +366,42 @@ export async function* scrapeSiteWithPlaywright(
         }
       }
 
+      // Special-case clownfish-games: if we successfully derived a total page
+      // count, drive pagination by incrementing the ?page=N query parameter
+      // directly instead of relying on potentially looping pagination links.
+      if (
+        siteConfig.siteId === "clownfish-games" &&
+        derivedTotalPages &&
+        currentPage < derivedTotalPages
+      ) {
+        try {
+          const baseUrl = new URL(nextUrl, siteConfig.baseUrl);
+          const nextPageNum = currentPage + 1;
+          baseUrl.searchParams.set("page", String(nextPageNum));
+          const candidateNextUrl = baseUrl.toString();
+
+          if (visitedListPageUrls.has(candidateNextUrl)) {
+            logger.warn(
+              {
+                siteId: siteConfig.siteId,
+                page: currentPage,
+                nextUrl: candidateNextUrl,
+              },
+              "Next derived pagination URL has already been visited; stopping pagination",
+            );
+            break;
+          }
+
+          nextUrl = candidateNextUrl;
+          currentPage += 1;
+          await page.waitForTimeout(siteConfig.rateLimitMs);
+          continue;
+        } catch {
+          // If URL manipulation fails for some reason, fall through to generic
+          // pagination logic below.
+        }
+      }
+
       const paginationLocator = page.locator(siteConfig.paginationSelector);
       const paginationLinkCount = await paginationLocator.count();
       let nextHref: string | null = null;
@@ -326,8 +420,49 @@ export async function* scrapeSiteWithPlaywright(
         }
       }
 
-      // If no data-page links are present (e.g. Shopify-style pagination on
-      // Zatu), fall back to detecting an explicit "next" link.
+      // If we still don't have a nextHref, try to infer the next page by
+      // inspecting numeric page numbers from the pagination links themselves
+      // (e.g. Shopify-style ?page=N URLs). We pick the smallest page number
+      // greater than the current page.
+      if (!nextHref && paginationLinkCount > 0) {
+        type PageCandidate = { pageNum: number; href: string };
+        const candidates: PageCandidate[] = [];
+
+        for (let i = 0; i < paginationLinkCount; i += 1) {
+          const link = paginationLocator.nth(i);
+          const hrefValue = await link.getAttribute("href");
+          if (!hrefValue) continue;
+
+          let pageNum: number | null = null;
+
+          const pageAttr = await link.getAttribute("data-page");
+          if (pageAttr && /^\d+$/.test(pageAttr)) {
+            pageNum = Number(pageAttr);
+          } else {
+            try {
+              const urlObj = new URL(hrefValue, siteConfig.baseUrl);
+              const qp = urlObj.searchParams.get("page");
+              if (qp && /^\d+$/.test(qp)) {
+                pageNum = Number(qp);
+              }
+            } catch {
+              // Ignore malformed URLs and keep scanning.
+            }
+          }
+
+          if (pageNum !== null && pageNum > currentPage) {
+            candidates.push({ pageNum, href: hrefValue });
+          }
+        }
+
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => a.pageNum - b.pageNum);
+          nextHref = candidates[0].href;
+        }
+      }
+
+      // If no numeric page could be determined, fall back to detecting an
+      // explicit "next" link via rel / class / text hints.
       if (!nextHref && paginationLinkCount > 0) {
         for (let i = 0; i < paginationLinkCount; i += 1) {
           const link = paginationLocator.nth(i);
@@ -356,10 +491,26 @@ export async function* scrapeSiteWithPlaywright(
         break;
       }
 
-      nextUrl =
+      const candidateNextUrl =
         nextHref.startsWith("http://") || nextHref.startsWith("https://")
           ? nextHref
           : new URL(nextHref, siteConfig.baseUrl).toString();
+
+      // If following this next URL would send us back to a page we've already
+      // scraped, stop instead of entering a pagination loop.
+      if (visitedListPageUrls.has(candidateNextUrl)) {
+        logger.warn(
+          {
+            siteId: siteConfig.siteId,
+            page: currentPage,
+            nextUrl: candidateNextUrl,
+          },
+          "Next pagination URL has already been visited; stopping pagination",
+        );
+        break;
+      }
+
+      nextUrl = candidateNextUrl;
 
       currentPage += 1;
       await page.waitForTimeout(siteConfig.rateLimitMs);

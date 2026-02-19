@@ -22,6 +22,23 @@ import Link from "next/link";
 import type { ProductSummary } from "../../lib/api/products";
 import { useProductSearch } from "../../lib/hooks/useProductSearch";
 
+const SITE_ROUTE_CONFIG: Record<
+  string,
+  {
+    slug: string;
+    label: string;
+  }
+> = {
+  "board-game-co-uk": {
+    slug: "zatu-uk",
+    label: "Zatu UK",
+  },
+  "clownfish-games": {
+    slug: "clownfish-games",
+    label: "Clownfish Games",
+  },
+};
+
 interface AppShellProps {
   children: ReactNode;
 }
@@ -125,6 +142,13 @@ export default function AppShell({ children }: AppShellProps) {
             >
               Zatu (UK)
             </MenuItem>
+            <MenuItem
+              component={Link}
+              href="/items/clownfish-games"
+              onClick={handleItemsClose}
+            >
+              ClownFish Games
+            </MenuItem>
           </Menu>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -163,23 +187,45 @@ export default function AppShell({ children }: AppShellProps) {
                   }}
                 >
                   <List dense>
-                    {searchResults.map((item) => (
-                      <ListItemButton
-                        key={item.id}
-                        component={Link}
-                        href={`/items/zatu-uk/${item.id}`}
-                        onClick={() => {
-                          setSearchInput("");
-                          setDebouncedSearch("");
-                          setSearchOpen(false);
-                        }}
-                      >
-                        <ListItemText
-                          primary={item.name}
-                          secondary={item.type}
-                        />
-                      </ListItemButton>
-                    ))}
+                    {searchResults.map((item) =>
+                      (() => {
+                        const firstSource = (item.sources ?? [])[0];
+                        const data =
+                          (firstSource?.additionalData as
+                            | { siteId?: string | null }
+                            | null
+                            | undefined) ?? null;
+                        const siteId = data?.siteId ?? undefined;
+
+                        const config = siteId
+                          ? (SITE_ROUTE_CONFIG[siteId] ?? {
+                              slug: "zatu-uk",
+                              label: siteId,
+                            })
+                          : {
+                              slug: "zatu-uk",
+                              label: "Zatu UK",
+                            };
+
+                        return (
+                          <ListItemButton
+                            key={item.id}
+                            component={Link}
+                            href={`/items/${config.slug}/${item.id}`}
+                            onClick={() => {
+                              setSearchInput("");
+                              setDebouncedSearch("");
+                              setSearchOpen(false);
+                            }}
+                          >
+                            <ListItemText
+                              primary={item.name}
+                              secondary={item.type}
+                            />
+                          </ListItemButton>
+                        );
+                      })(),
+                    )}
                   </List>
                 </Box>
               )}
