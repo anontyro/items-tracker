@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { useAdminApiKey } from "../../../lib/hooks/useAdminApiKey";
+
 interface ScrapeRunSummary {
   finishedAt: string;
   itemCount?: number;
@@ -30,21 +32,11 @@ interface ScrapeSiteStatus {
   };
 }
 
-const ADMIN_KEY_STORAGE_KEY = "site-items-tracker-admin-api-key";
-
 export default function SystemDashboardPage() {
-  const [adminKey, setAdminKey] = useState("");
+  const { adminKey, setAdminKey, clearAdminKey } = useAdminApiKey();
   const [statuses, setStatuses] = useState<ScrapeSiteStatus[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(ADMIN_KEY_STORAGE_KEY);
-    if (stored) {
-      setAdminKey(stored);
-    }
-  }, []);
 
   async function loadStatus() {
     if (!adminKey) {
@@ -67,9 +59,7 @@ export default function SystemDashboardPage() {
       if (!res.ok) {
         if (res.status === 401) {
           setError("Unauthorized: admin API key is invalid");
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem(ADMIN_KEY_STORAGE_KEY);
-          }
+          clearAdminKey();
         } else {
           setError(`Failed to load status (HTTP ${res.status})`);
         }
@@ -79,10 +69,6 @@ export default function SystemDashboardPage() {
 
       const data = (await res.json()) as ScrapeSiteStatus[];
       setStatuses(data);
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(ADMIN_KEY_STORAGE_KEY, adminKey);
-      }
     } catch (err) {
       setError("Failed to load status");
       setStatuses(null);
@@ -109,10 +95,10 @@ export default function SystemDashboardPage() {
 
     return (
       <div>
-        <div>{label}: {dateText}</div>
-        {typeof run.itemCount === "number" && (
-          <div>Items: {run.itemCount}</div>
-        )}
+        <div>
+          {label}: {dateText}
+        </div>
+        {typeof run.itemCount === "number" && <div>Items: {run.itemCount}</div>}
         {run.errorMessage && <div>Error: {run.errorMessage}</div>}
       </div>
     );

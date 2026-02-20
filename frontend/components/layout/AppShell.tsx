@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
 import type { ProductSummary } from "../../lib/api/products";
+import { useAdminApiKey } from "../../lib/hooks/useAdminApiKey";
 import { useProductSearch } from "../../lib/hooks/useProductSearch";
 
 const SITE_ROUTE_CONFIG: Record<
@@ -49,6 +50,12 @@ export default function AppShell({ children }: AppShellProps) {
 
   const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
   const userMenuOpen = Boolean(userAnchorEl);
+
+  const [systemAnchorEl, setSystemAnchorEl] = useState<null | HTMLElement>(
+    null,
+  );
+  const systemMenuOpen = Boolean(systemAnchorEl);
+  const { hasAdminKey, setAdminKey } = useAdminApiKey();
 
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -108,6 +115,24 @@ export default function AppShell({ children }: AppShellProps) {
 
   const handleUserMenuClose = () => {
     setUserAnchorEl(null);
+  };
+
+  const handleSystemMenuOpen = (event: MouseEvent<HTMLElement>) => {
+    setSystemAnchorEl(event.currentTarget);
+  };
+
+  const handleSystemMenuClose = () => {
+    setSystemAnchorEl(null);
+  };
+
+  const handleSetAdminApiKey = () => {
+    // Basic prompt-based entry for now to avoid extra UI complexity.
+    // eslint-disable-next-line no-alert
+    const value = window.prompt("Enter admin API key", "");
+    if (value && value.trim()) {
+      setAdminKey(value.trim());
+    }
+    handleSystemMenuClose();
   };
 
   return (
@@ -230,6 +255,31 @@ export default function AppShell({ children }: AppShellProps) {
                 </Box>
               )}
             </Box>
+
+            <Button
+              color="inherit"
+              onClick={handleSystemMenuOpen}
+              aria-haspopup="true"
+            >
+              System
+            </Button>
+            <Menu
+              anchorEl={systemAnchorEl}
+              open={systemMenuOpen}
+              onClose={handleSystemMenuClose}
+              keepMounted
+            >
+              <MenuItem
+                component={Link}
+                href="/system/dashboard"
+                onClick={handleSystemMenuClose}
+              >
+                System dashboard
+              </MenuItem>
+              <MenuItem onClick={handleSetAdminApiKey}>
+                {hasAdminKey ? "Update Admin API key" : "Set Admin API key"}
+              </MenuItem>
+            </Menu>
 
             <IconButton
               size="small"
