@@ -227,3 +227,31 @@ export async function sendImagesFromScrape(options: {
     }
   }
 }
+
+export async function sendScrapeRunStatus(options: {
+  apiBaseUrl: string;
+  apiKey: string;
+  siteId: string;
+  status: "SUCCESS" | "FAILURE";
+  startedAt: string;
+  finishedAt: string;
+  itemCount: number;
+  errorMessage?: string | null;
+  runId?: string | null | undefined;
+}): Promise<void> {
+  const { apiBaseUrl, apiKey, ...payload } = options;
+
+  const url = `${apiBaseUrl.replace(/\/$/, "")}/v1/admin/scrape-runs`;
+
+  try {
+    await axios.post(url, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      timeout: 10000,
+    });
+  } catch {
+    // Best-effort only: failures here should not break the main scrape flow.
+  }
+}

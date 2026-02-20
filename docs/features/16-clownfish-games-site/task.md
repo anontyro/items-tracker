@@ -71,14 +71,14 @@
     - Any page-level or site-level error messages.
   - Align clownfish logging with existing scrape log structures so the dashboard can consume a consistent format across all sites.
 
-- [ ] 11. Expose per-site scrape status via backend API
+- [x] 11. Expose per-site scrape status via backend API
   - Create or extend an API endpoint that returns, for each site (including clownfish-games):
     - Last successful scrape timestamp.
     - Last failed scrape timestamp and a brief error summary.
     - Last scraped item count.
   - Ensure this endpoint is efficient enough to be called periodically by the frontend dashboard.
 
-- [ ] 12. Implement `system/dashboard` frontend page
+- [x] 12. Implement `system/dashboard` frontend page
   - Add a new route at `system/dashboard` in the frontend.
   - Render a simple system dashboard showing, per site (board-game-co-uk, zatu-uk, clownfish-games, etc.):
     - Last success time.

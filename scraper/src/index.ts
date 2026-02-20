@@ -10,6 +10,7 @@ import { getActiveSiteConfigs, loadSiteConfigs } from "./config/siteConfig";
 import {
   sendImagesFromScrape,
   sendPriceSnapshotsBatch,
+  sendScrapeRunStatus,
 } from "./client/backendApi";
 
 import { config } from "./config/env";
@@ -64,9 +65,11 @@ async function main() {
   for (const site of sitesToScrape) {
     logger.info({ siteId: site.siteId }, "Starting sample scrape for site");
 
-    const runScrapedAt = new Date().toISOString();
+    const runStartedAtIso = new Date().toISOString();
+    const runId = `${site.siteId}-${runStartedAtIso}`;
     let totalProducts = 0;
     const sampleNames: string[] = [];
+    let runError: string | null = null;
 
     if (!disableSqlite) {
       for await (const pageProducts of scrapeSiteWithPlaywright(site, logger, {
@@ -83,7 +86,7 @@ async function main() {
           );
         }
 
-        saveScrapedProducts(config.sqlitePath, pageProducts, runScrapedAt);
+        saveScrapedProducts(config.sqlitePath, pageProducts, runStartedAtIso);
       }
 
       const latestRows: RawScrapedProductRow[] =
@@ -92,8 +95,6 @@ async function main() {
       const normalized = normalizeRowsForSite(site, latestRows);
 
       const queuePayload = { normalized };
-
-      const runId = `${site.siteId}-${new Date().toISOString()}`;
 
       const queueId = enqueuePriceHistoryBatch(config.sqlitePath, {
         runId,
@@ -143,6 +144,8 @@ async function main() {
             : "Unknown error while sending batch";
         const nextAttemptAtIso = computeNextAttemptIso(0);
 
+        runError = message;
+
         markQueueItemFailed(
           config.sqlitePath,
           queueId,
@@ -176,15 +179,33 @@ async function main() {
       );
     }
 
+    const runFinishedAtIso = new Date().toISOString();
+
     logger.info(
       {
         siteId: site.siteId,
         productCount: totalProducts,
         sampleNames,
         sqlitePath: config.sqlitePath,
+        runId,
+        runStartedAtIso,
+        runFinishedAtIso,
+        runError,
       },
       "Completed sample scrape for site",
     );
+
+    await sendScrapeRunStatus({
+      apiBaseUrl: config.backendApiUrl,
+      apiKey: config.apiKey,
+      siteId: site.siteId,
+      status: runError ? "FAILURE" : "SUCCESS",
+      startedAt: runStartedAtIso,
+      finishedAt: runFinishedAtIso,
+      itemCount: totalProducts,
+      errorMessage: runError,
+      runId,
+    });
   }
 
   // TODO: wire up BullMQ queues and Playwright-based scraping in later steps
