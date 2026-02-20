@@ -2,6 +2,7 @@
 
 import {
   Avatar,
+  Box,
   Button,
   IconButton,
   List,
@@ -11,6 +12,7 @@ import {
   Menu,
   MenuItem,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import { Container, Stack, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
@@ -18,6 +20,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { ProductSummary } from "../lib/api/products";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import StarIcon from "@mui/icons-material/Star";
 import Watchlist from "../components/watchlist/Watchlist";
 import { useProductSearch } from "../lib/hooks/useProductSearch";
 import { useWatchlist } from "../lib/hooks/useWatchlist";
@@ -103,15 +107,26 @@ const ProductActions: React.FC<ProductActionsProps> = ({
     primaryHref = `/items/zatu-uk/${product.id}`;
   }
 
+  const watchlistLabel = isWatched
+    ? "Remove from watchlist"
+    : "Add to watchlist";
+
   return (
-    <Stack direction="row" spacing={1}>
-      <Button
-        variant={isWatched ? "contained" : "outlined"}
-        size="small"
-        onClick={onToggleWatchlist}
-      >
-        {isWatched ? "Remove from watchlist" : "Add to watchlist"}
-      </Button>
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Tooltip title={watchlistLabel}>
+        <IconButton
+          size="small"
+          color={isWatched ? "warning" : "default"}
+          aria-label={watchlistLabel}
+          onClick={onToggleWatchlist}
+        >
+          {isWatched ? (
+            <StarIcon fontSize="small" />
+          ) : (
+            <StarBorderIcon fontSize="small" />
+          )}
+        </IconButton>
+      </Tooltip>
 
       {siteOptions.length <= 1 ? (
         <Button
@@ -372,14 +387,9 @@ export default function HomePage() {
                       borderRadius: 1,
                       bgcolor: "background.paper",
                       boxShadow: 1,
+                      display: "flex",
+                      alignItems: "flex-start",
                     }}
-                    secondaryAction={
-                      <ProductActions
-                        product={product}
-                        isWatched={isWatched}
-                        onToggleWatchlist={() => toggleWatchlist(product)}
-                      />
-                    }
                   >
                     <ListItemAvatar>
                       <ProductAvatar product={product} />
@@ -387,7 +397,15 @@ export default function HomePage() {
                     <ListItemText
                       primary={product.name}
                       secondary={product.type}
+                      sx={{ mr: 2 }}
                     />
+                    <Box sx={{ flexShrink: 0 }}>
+                      <ProductActions
+                        product={product}
+                        isWatched={isWatched}
+                        onToggleWatchlist={() => toggleWatchlist(product)}
+                      />
+                    </Box>
                   </ListItem>
                 );
               })}
