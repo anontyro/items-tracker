@@ -3,6 +3,58 @@ import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
+function buildFuzzySearchWhere(
+  q?: string,
+): Prisma.ProductWhereInput | undefined {
+  const raw = (q ?? "").trim();
+  if (!raw) {
+    return undefined;
+  }
+
+  // Replace most punctuation and separators with spaces so that
+  // "Mission: Red Planet" can be found by "mission red planet".
+  const normalised = raw
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+
+  if (!normalised) {
+    return undefined;
+  }
+
+  const tokens = Array.from(
+    new Set(
+      normalised
+        .split(/\s+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0),
+    ),
+  );
+
+  if (tokens.length === 0) {
+    return undefined;
+  }
+
+  return {
+    AND: tokens.map((token) => ({
+      OR: [
+        {
+          name: {
+            contains: token,
+            mode: "insensitive",
+          },
+        },
+        {
+          bggCanonicalName: {
+            contains: token,
+            mode: "insensitive",
+          },
+        },
+      ],
+    })),
+  };
+}
+
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
@@ -19,11 +71,9 @@ export class ProductsService {
 
     const where: Prisma.ProductWhereInput = {};
 
-    if (q) {
-      where.name = {
-        contains: q,
-        mode: "insensitive",
-      };
+    const textWhere = buildFuzzySearchWhere(q);
+    if (textWhere) {
+      Object.assign(where, textWhere);
     }
 
     if (siteId) {
@@ -72,11 +122,9 @@ export class ProductsService {
 
     const where: Prisma.ProductWhereInput = {};
 
-    if (q) {
-      where.name = {
-        contains: q,
-        mode: "insensitive",
-      };
+    const textWhere = buildFuzzySearchWhere(q);
+    if (textWhere) {
+      Object.assign(where, textWhere);
     }
 
     if (siteId) {
