@@ -20,11 +20,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { ProductSummary } from "../lib/api/products";
 import Watchlist from "../components/watchlist/Watchlist";
 import { useProductSearch } from "../lib/hooks/useProductSearch";
-
-type WatchlistItem = {
-  id: string;
-  name: string;
-};
+import { useWatchlist } from "../lib/hooks/useWatchlist";
 
 type SiteOption = {
   siteId: string;
@@ -189,10 +185,10 @@ export default function HomePage() {
   const [offset, setOffset] = useState(0);
   const [items, setItems] = useState<ProductSummary[]>([]);
   const [total, setTotal] = useState(0);
-  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
-  const [hasLoadedWatchlist, setHasLoadedWatchlist] = useState(false);
   const limit = 50;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const { items: watchlist, toggleItem: toggleWatchlistItem } = useWatchlist();
 
   const aggregateProducts = (
     itemsToAggregate: ProductSummary[],
@@ -248,61 +244,8 @@ export default function HomePage() {
     };
   }, [searchInput]);
 
-  useEffect(() => {
-    const stored = window.localStorage.getItem("watchlist");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          if (parsed.length > 0 && typeof parsed[0] === "string") {
-            const items = (parsed as string[]).map((id) => ({
-              id,
-              name: id,
-            }));
-            setWatchlist(items);
-          } else {
-            const items = parsed
-              .filter((value: any) => value && typeof value.id === "string")
-              .map((value: any) => ({
-                id: value.id as string,
-                name:
-                  typeof value.name === "string" && value.name.trim()
-                    ? (value.name as string)
-                    : (value.id as string),
-              }));
-            setWatchlist(items);
-          }
-        }
-      } catch {
-        // Ignore invalid JSON
-      }
-    }
-
-    setHasLoadedWatchlist(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hasLoadedWatchlist) {
-      return;
-    }
-    window.localStorage.setItem("watchlist", JSON.stringify(watchlist));
-  }, [watchlist, hasLoadedWatchlist]);
-
   const toggleWatchlist = (product: ProductSummary) => {
-    setWatchlist((prev) => {
-      const exists = prev.some((item) => item.id === product.id);
-      if (exists) {
-        return prev.filter((item) => item.id !== product.id);
-      }
-
-      return [
-        ...prev,
-        {
-          id: product.id,
-          name: product.name,
-        },
-      ];
-    });
+    toggleWatchlistItem(product.id, product.name);
   };
 
   const { data, isLoading, isError, error, isFetching } = useProductSearch({
