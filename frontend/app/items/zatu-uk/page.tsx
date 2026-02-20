@@ -1,48 +1,17 @@
 "use client";
 
-import {
-  Avatar,
-  Button,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  TextField,
-} from "@mui/material";
+import { Button, IconButton, List, TextField, Tooltip } from "@mui/material";
 import { Container, Stack, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
+import { ProductListItem } from "../../../components/item/ProductListItem";
 import type { ProductSummary } from "../../../lib/api/products";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import StarIcon from "@mui/icons-material/Star";
 import Watchlist from "../../../components/watchlist/Watchlist";
 import { useProductSearch } from "../../../lib/hooks/useProductSearch";
 import { useWatchlist } from "../../../lib/hooks/useWatchlist";
-
-function ProductAvatar({ product }: { product: ProductSummary }) {
-  const [hasError, setHasError] = useState(false);
-
-  if (hasError) {
-    return (
-      <Avatar variant="rounded" sx={{ width: 56, height: 56, mr: 2 }}>
-        {product.name.charAt(0)}
-      </Avatar>
-    );
-  }
-
-  return (
-    <Avatar
-      variant="rounded"
-      sx={{ width: 56, height: 56, mr: 2 }}
-      src={`/api/games/${product.id}/image`}
-      alt={product.name}
-      imgProps={{
-        onError: () => setHasError(true),
-      }}
-    >
-      {product.name.charAt(0)}
-    </Avatar>
-  );
-}
 
 export default function ZatuUkPage() {
   const [searchInput, setSearchInput] = useState("");
@@ -183,29 +152,30 @@ export default function ZatuUkPage() {
                   (item) => item.id === product.id,
                 );
 
+                const watchlistLabel = isWatched
+                  ? "Remove from watchlist"
+                  : "Add to watchlist";
+
                 return (
-                  <ListItem
+                  <ProductListItem
                     key={product.id}
-                    disableGutters
-                    sx={{
-                      mb: 1,
-                      px: 2,
-                      py: 1.5,
-                      borderRadius: 1,
-                      bgcolor: "background.paper",
-                      boxShadow: 1,
-                    }}
-                    secondaryAction={
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          variant={isWatched ? "contained" : "outlined"}
-                          size="small"
-                          onClick={() => toggleWatchlist(product)}
-                        >
-                          {isWatched
-                            ? "Remove from watchlist"
-                            : "Add to watchlist"}
-                        </Button>
+                    product={product}
+                    actions={
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Tooltip title={watchlistLabel}>
+                          <IconButton
+                            size="small"
+                            color={isWatched ? "warning" : "default"}
+                            aria-label={watchlistLabel}
+                            onClick={() => toggleWatchlist(product)}
+                          >
+                            {isWatched ? (
+                              <StarIcon fontSize="small" />
+                            ) : (
+                              <StarBorderIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </Tooltip>
                         <Button
                           variant="outlined"
                           size="small"
@@ -216,15 +186,7 @@ export default function ZatuUkPage() {
                         </Button>
                       </Stack>
                     }
-                  >
-                    <ListItemAvatar>
-                      <ProductAvatar product={product} />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={product.name}
-                      secondary={product.type}
-                    />
-                  </ListItem>
+                  />
                 );
               })}
             </List>

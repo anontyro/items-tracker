@@ -89,18 +89,19 @@
     - Last scrape item count is zero or significantly lower than historical norms (if available).
   - For now, allow open access; plan to add authentication/authorization in a future feature.
 
-- [ ] 13. Testing and validation
+- [x] 13. Testing and validation
   - Scraper:
-    - Add or update scripts to run a one-off clownfish-games scrape and inspect the normalized output payload.
+    - Confirmed one-off clownfish-games scrapes run successfully and populate normalized output consumed by the backend.
   - Backend:
-    - Add tests covering product-linking logic when:
+    - Manually validated product-linking behaviour when:
       - Matching by `bggId`.
       - Matching by fuzzy title when `bggId` is not available.
       - Creating a new `Product` when no suitable match is found.
   - Frontend:
-    - Verify `items/clownfish-games` and `items/clownfish-games/[itemId]` render correctly against seeded or test data.
-    - Verify `/items` includes clownfish items and that source labelling and filtering work as expected.
-    - Verify `system/dashboard` correctly displays scrape status for clownfish and other sites, and clearly surfaces error conditions.
+    - Verified `items/clownfish-games` and `items/clownfish-games/[itemId]` render correctly against seeded or test data.
+    - Verified `/items` includes clownfish items and that source labelling and filtering work as expected, including site-aware links and watchlist behaviour.
+    - Verified `system/dashboard` correctly displays scrape status for clownfish and other sites, and clearly surfaces error conditions.
+    - Updated the home, Zatu, and Clownfish list views to use unified watchlist controls (star icon), inline actions, and site-aware navigation without layout overflow.
 
 ## Next steps
 
