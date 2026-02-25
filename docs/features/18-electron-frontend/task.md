@@ -1,0 +1,164 @@
+# Board Game Price Tracker – Electron Desktop App (macOS-first)
+
+## Implementation Plan
+
+- [ ] 1. Electron app project setup and monorepo integration
+  - Create a new `desktop` (or `electron-app`) package in the pnpm workspace under a suitable folder (e.g. `/desktop`), configured with TypeScript.
+  - Set up Electron with a clear separation between `main` (Node) and `renderer` (web/React/Next-based) processes.
+  - Decide on the renderer strategy:
+    - Use a Next.js-based renderer so that UI components can be shared with the existing web frontend.
+    - Or, if needed, use a lightweight React renderer that still reuses a shared UI library.
+  - Configure basic app lifecycle behavior (main window create/destroy, single-instance lock, graceful exit).
+  - Ensure development workflow is smooth:
+    - `pnpm dev` (or similar) can run Electron + renderer in watch mode.
+    - Debugging support for both main and renderer processes.
+  - _Technical notes: macOS as the initial target, but keep structure portable so adding Windows/Linux builds later is mostly an electron-builder configuration task._
+  - Status: Not started
+
+- [ ] 2. Shared libraries for types, API client, and UI components
+  - Identify existing shared concepts between Next.js frontend and Electron app:
+    - TypeScript models for `Product`, `PriceHistoryEntry`, `TrackedItem`, `Alert`.
+    - API client utilities (e.g. base API client, React Query hooks or similar).
+    - Reusable presentational components (cards, tables, charts) where feasible.
+  - Create one or more shared packages in the monorepo (e.g. `/packages/shared-types`, `/packages/shared-ui`, `/packages/shared-api-client`).
+  - Move relevant types and API client logic from the Next.js app into these shared packages.
+  - Update both Next.js and Electron projects to consume the shared packages.
+  - Establish conventions for future shared code (directory structure, naming, versioning within the monorepo).
+  - Status: Not started
+
+- [ ] 3. Settings & first-run experience (API configuration)
+  - Design a dedicated Settings section in the Electron app, accessible via:
+    - Menu item (e.g. `Board Game Tracker → Settings`), and/or
+    - A visible button in the main UI.
+  - On first run, detect missing configuration values and:
+    - Show the Settings screen first, blocking access to the main UI until required fields are set.
+    - Clearly explain what each setting is for.
+  - Settings to support initially (mirroring the existing env variables where sensible):
+    - API base URL (e.g. `API_BASE_URL`, matching `NEXT_PUBLIC_API_BASE_URL` on the web).
+    - Shared API key used by the current system.
+    - Environment selection if relevant (prod vs staging).
+    - Polling interval for updates/alerts (e.g. `POLL_INTERVAL_SECONDS`).
+  - Decide where to store settings:
+    - In the local SQLite DB (preferred for consistency with other persisted data), or
+    - In a config file managed by Electron (only if simpler for bootstrap).
+  - Implement validation and surfacing of misconfiguration (e.g. invalid URL or failed auth) with clear error messages.
+  - Status: Not started
+
+- [ ] 4. Local SQLite database design and sync strategy
+  - Choose a Node-friendly SQLite integration for Electron (e.g. a native module or WASM-based driver) and wire it into the main process.
+  - Define the local schema to support:
+    - Cached products and basic product metadata.
+    - A limited slice of price history per product (e.g. last N days or last N points) to avoid unbounded growth.
+    - User watchlist/tracking configuration (mirrored from server, where applicable).
+    - Alerts history (recent alerts for local display and de-duplication).
+    - User preferences and settings if stored in SQLite.
+  - Implement initial sync logic:
+    - On first successful connection to the API, download a reasonable subset of data (e.g. current tracked items, and recent history for those items).
+    - Store that subset locally for quick subsequent access and limited offline usage.
+    - Provide a progress indicator during the first sync if it may take noticeable time.
+  - Implement incremental sync logic:
+    - Periodically poll the backend for updates since a last-sync marker (e.g. based on `updatedAt` fields or a dedicated endpoint), focusing on tracked items and relevant products.
+    - Prune old local history beyond the chosen retention window.
+    - Expose retention policy in configuration (e.g. keep last 90 days or last 200 points per product) to support tuning later.
+    - Track basic sync metadata (last full sync, last incremental sync, last error) in a small internal table.
+  - Decide and document offline behavior for MVP:
+    - Treat SQLite as an enhanced, structured cache rather than a full offline-first store.
+    - When offline, the app surfaces last-known data from SQLite with a clear “offline” indicator and timestamps for when sections were last updated.
+    - Continue to allow local-only interactions that do not require server writes (sorting, filtering, viewing price history, reading alerts history).
+    - For server-side mutations (e.g. changing tracking rules), start with either:
+      - Read-only behavior in offline mode (preferred for MVP simplicity), or
+      - A simple queued-write mechanism that retries once connectivity returns (mark this clearly as a follow-up enhancement if not in initial scope).
+    - Ensure that when the app comes back online, it performs a catch-up sync before updating key dashboards, so cached data does not appear indefinitely stale.
+  - Status: Not started
+
+- [ ] 5. Alerts, polling, and notification pipeline
+  - Define how the Electron app discovers “new data” after scrapes:
+    - Poll existing backend endpoints (e.g. tracking/alerts endpoints) at a configurable interval.
+    - If needed, add or extend dedicated endpoints to provide a lightweight summary of recent changes and alerts.
+  - Implement a polling scheduler in the main process or a background module that:
+    - Periodically calls the backend while the app (or tray process) is running.
+    - Updates the local SQLite DB with new alert and product/price data.
+  - In-app alerts UX:
+    - Provide an Alerts panel or section listing recent alerts (price drops, back in stock) with timestamps and links to detail views.
+    - Support simple filtering (e.g. by alert type, unread/read).
+  - Desktop notifications:
+    - Integrate with the OS notification system so price drop/back-in-stock alerts can surface as system notifications.
+    - Respect basic user preferences (e.g. enable/disable desktop notifications in Settings).
+  - Status: Not started
+
+- [ ] 6. Tray icon and background behavior
+  - Add a system tray icon for the Electron app on macOS (with a menu and badge where possible).
+  - Define behavior when the main window is closed:
+    - App remains running in the tray by default.
+    - Option in Settings to “Quit when window is closed” for users who prefer that behavior.
+  - Ensure polling and alert processing can continue while the app is running in the tray (without the main window visible).
+  - Allow quick actions from the tray menu:
+    - Open main window.
+    - Open recent alerts list.
+    - Quickly enable/disable notifications.
+  - Document any platform-specific behavior for future Windows/Linux support (e.g. tray differences, notification APIs).
+  - Status: Not started
+
+- [ ] 7. Desktop UI and navigation, inspired by the web app
+  - Design a desktop-optimized shell that still feels consistent with the Next.js site:
+    - Consider a persistent sidebar for navigation.
+    - Use similar colors, typography, and card/table patterns.
+  - Implement core screens:
+    - Dashboard/home:
+      - Show a summary of tracked items (with basic price/availability state) and recent alerts.
+      - Include at-a-glance metrics (e.g. number of tracked items, number of active alerts, last sync time).
+      - Indicate online/offline status and last data refresh timestamp.
+      - Provide quick links to Products, Tracking, and Settings.
+    - Products/search:
+      - Search and browse products with filters and sorting (reusing shared API/client logic and shared types).
+      - Show whether each product is currently on the watchlist and allow quick add/remove actions.
+      - Indicate when results are coming from cache vs freshly synced data.
+      - Handle empty, loading, and error states gracefully, including when the app is offline.
+    - Product detail:
+      - Show core product information and current price/availability.
+      - Display a full price history chart using shared chart components, backed by the locally cached history slice.
+      - Clearly mark the visible history window (e.g. “Last 90 days”) based on the retention policy.
+      - Surface relevant alerts or tracking rules associated with the product.
+    - Tracking/watchlist:
+      - List all tracked items with their key status (current price, last change, availability, active conditions).
+      - Provide controls to add/remove tracking and edit basic tracking settings (aligned with current backend capabilities for MVP).
+      - Reflect server state as the source of truth while still reading from cache when offline.
+      - Show when changes are pending sync (if queued-write behavior is later enabled).
+    - Settings:
+      - Configure API base URL, environment, API key, polling interval, notification preferences, and tray behavior.
+      - Show current sync metadata (last success, last error) to aid diagnostics.
+      - Expose non-sensitive parts of the cache strategy (e.g. history retention) as read-only information or tunable settings.
+  - Implement common UI states across screens:
+    - Consistent loading and skeleton components for main panels.
+    - Clear error banners/toasts when sync or API calls fail.
+    - A unified offline banner that appears across relevant screens when connectivity is lost.
+  - Ensure all screens can operate gracefully with partial or stale local data (e.g. while offline or during sync).
+  - Status: Not started
+
+- [ ] 8. Packaging, auto-update, and release pipeline
+  - Integrate `electron-builder` (or similar) into the project:
+    - Configure macOS build targets (e.g. dmg, zip) for initial distribution.
+    - Set up appropriate app identifiers and versioning.
+  - Configure auto-update:
+    - Decide on an update server or hosting strategy (e.g. GitHub Releases, self-hosted).
+    - Ensure update checks are performed safely and respectfully (e.g. on startup and occasionally thereafter).
+  - Add CI/CD steps to build and publish Electron app artifacts alongside (or in parallel with) existing deployment flows.
+  - Document the install/update process for developers and users.
+  - Status: Not started
+
+- [ ] 9. Security, performance, and future enhancements
+  - Security considerations for MVP:
+    - Keep API key handling simple but not reckless (e.g. avoid logging secrets, ensure settings UI masks sensitive fields where appropriate).
+    - Use Electron best practices: `contextIsolation`, disabled `nodeIntegration` in renderer, safe IPC patterns.
+  - Plan for future hardening:
+    - Potential encryption of the local SQLite database.
+    - Integration with OS keychains for storing sensitive material (API keys, future per-user tokens).
+    - Transition from shared API key to per-user authentication once backend and database support are in place.
+  - Performance and resource usage:
+    - Tune polling interval and payload size to avoid hammering the API or overusing CPU while in tray mode.
+    - Periodically vacuum/compact the local SQLite DB if necessary.
+  - Future feature considerations (beyond initial scope, but to design for):
+    - WebSocket/SSE-based updates instead of pure polling.
+    - More sophisticated offline-first behavior (write queues, conflict resolution).
+    - Richer desktop-only features (bulk export, advanced saved views, diagnostics panel).
+  - Status: Not started
