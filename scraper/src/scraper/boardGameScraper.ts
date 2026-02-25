@@ -375,10 +375,10 @@ export async function* scrapeSiteWithPlaywright(
         currentPage < derivedTotalPages
       ) {
         try {
-          const baseUrl = new URL(nextUrl, siteConfig.baseUrl);
+          const baseUrl: URL = new URL(nextUrl, siteConfig.baseUrl);
           const nextPageNum = currentPage + 1;
           baseUrl.searchParams.set("page", String(nextPageNum));
-          const candidateNextUrl = baseUrl.toString();
+          const candidateNextUrl: string = baseUrl.toString();
 
           if (visitedListPageUrls.has(candidateNextUrl)) {
             logger.warn(
