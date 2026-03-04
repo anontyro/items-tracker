@@ -9,13 +9,16 @@
     "start:scraper": "pnpm --filter board-game-price-tracker-scraper start",
     "dev:backend": "pnpm --filter board-game-price-tracker-backend start:dev",
     "dev:frontend": "pnpm --filter board-game-price-tracker-frontend dev",
+    "dev:desktop": "pnpm --filter board-game-price-tracker-desktop electron:dev",
     "build:backend": "pnpm --filter board-game-price-tracker-backend build",
-    "start:backend": "pnpm --filter board-game-price-tracker-backend start"
+    "start:backend": "pnpm --filter board-game-price-tracker-backend start",
+    "build:desktop": "pnpm --filter board-game-price-tracker-desktop electron:build"
   },
   "workspaces": [
     "scraper",
     "frontend",
     "backend",
+    "desktop",
     "packages/*"
   ]
 }

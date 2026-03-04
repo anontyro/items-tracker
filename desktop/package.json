@@ -1,0 +1,69 @@
+{
+  "name": "board-game-price-tracker-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Board Game Price Tracker Desktop App (macOS)",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "concurrently \"pnpm dev:renderer\" \"pnpm dev:main\"",
+    "dev:main": "vite build --config vite.main.config.ts --watch",
+    "dev:renderer": "vite dev --config vite.renderer.config.ts",
+    "build": "pnpm build:main && pnpm build:renderer",
+    "build:main": "vite build --config vite.main.config.ts",
+    "build:renderer": "vite build --config vite.renderer.config.ts",
+    "electron:dev": "concurrently \"pnpm dev\" \"wait-on dist/renderer/index.html && electron .\"",
+    "electron:build": "pnpm build && electron-builder",
+    "electron:preview": "pnpm build && electron .",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "better-sqlite3": "^9.6.0",
+    "electron-store": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^9.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0",
+    "vite-plugin-electron": "^0.29.0",
+    "wait-on": "^8.0.0"
+  },
+  "build": {
+    "appId": "com.alexwilkinson.boardgamepricetracker",
+    "productName": "Board Game Price Tracker",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "publish": null
+  }
+}

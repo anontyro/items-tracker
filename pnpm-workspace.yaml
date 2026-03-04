@@ -2,6 +2,7 @@ packages:
   - scraper
   - frontend
   - backend
+  - desktop
   - packages/*
 
 onlyBuiltDependencies:
