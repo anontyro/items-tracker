@@ -3,11 +3,11 @@ import path from 'path';
 
 export default defineConfig({
   build: {
-    outDir: 'dist/main',
+    outDir: 'dist',
     lib: {
-      entry: path.resolve(__dirname, 'src/main/main.ts'),
+      entry: path.resolve(__dirname, 'src/main/preload.ts'),
       formats: ['cjs'],
-      fileName: () => 'index.js',
+      fileName: () => 'preload.js',
     },
     rollupOptions: {
       external: ['electron'],
@@ -18,7 +18,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@main': path.resolve(__dirname, 'src/main'),
-      '@shared': path.resolve(__dirname, '../packages/shared-types/src'),
     },
   },
 });
