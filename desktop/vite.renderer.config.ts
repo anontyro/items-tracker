@@ -8,6 +8,11 @@ export default defineConfig({
   build: {
     outDir: 'dist/renderer',
     emptyOutDir: false,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'src/renderer/index.html'),
+      },
+    },
   },
   resolve: {
     alias: {
