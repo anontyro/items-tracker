@@ -1,5 +1,7 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
+import { registerSettingsIpc } from './ipc/settingsIpc';
+import { settingsService } from './services/settingsService';
 
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow: BrowserWindow | null = null;
@@ -36,6 +38,15 @@ function createWindow(): void {
 
 // App lifecycle
 app.whenReady().then(() => {
+  // Register IPC handlers
+  if (mainWindow) {
+    registerSettingsIpc(mainWindow);
+  }
+
+  // Register app info handlers
+  ipcMain.handle('app:get-version', () => app.getVersion());
+  ipcMain.handle('app:get-platform', () => process.platform);
+
   createWindow();
 
   app.on('activate', () => {
@@ -47,8 +58,11 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  // Check settings for quit behavior
+  const quitOnClose = settingsService.get('quitOnWindowClose');
+  
   // On macOS, apps typically stay running when all windows are closed
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' || quitOnClose) {
     app.quit();
   }
 });

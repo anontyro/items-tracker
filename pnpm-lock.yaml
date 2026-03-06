@@ -49,6 +49,18 @@ importers:
 
   desktop:
     dependencies:
+      '@emotion/react':
+        specifier: ^11.14.0
+        version: 11.14.0(@types/react@18.3.0)(react@19.0.0)
+      '@emotion/styled':
+        specifier: ^11.14.1
+        version: 11.14.1(@emotion/react@11.14.0)(@types/react@18.3.0)(react@19.0.0)
+      '@mui/icons-material':
+        specifier: ^7.3.8
+        version: 7.3.8(@mui/material@7.3.7)(@types/react@18.3.0)(react@19.0.0)
+      '@mui/material':
+        specifier: ^7.3.7
+        version: 7.3.7(@emotion/react@11.14.0)(@emotion/styled@11.14.1)(@types/react@18.3.0)(react-dom@19.0.0)(react@19.0.0)
       better-sqlite3:
         specifier: ^9.6.0
         version: 9.6.0
