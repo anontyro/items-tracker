@@ -49,13 +49,16 @@ export function registerSettingsIpc(mainWindow: BrowserWindow): void {
 
   // Test API connection
   ipcMain.handle('settings:test-connection', async (_event, settings: { apiBaseUrl: string; apiKey: string }) => {
+    console.log('Test connection request received:', settings);
     try {
       const url = `${settings.apiBaseUrl.replace(/\/$/, '')}/health`;
+      console.log('Testing connection to:', url);
       const response = await fetch(url, {
         headers: {
           'x-api-key': settings.apiKey,
         },
       });
+      console.log('Response status:', response.status);
 
       if (response.ok) {
         return { success: true, message: 'Connection successful!' };
@@ -66,6 +69,7 @@ export function registerSettingsIpc(mainWindow: BrowserWindow): void {
         };
       }
     } catch (error) {
+      console.error('Connection test failed:', error);
       return { 
         success: false, 
         message: error instanceof Error ? error.message : 'Connection failed' 

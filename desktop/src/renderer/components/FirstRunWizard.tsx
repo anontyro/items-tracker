@@ -50,12 +50,16 @@ const FirstRunWizard: React.FC<FirstRunWizardProps> = ({ onComplete }) => {
   };
 
   const handleTestConnection = async () => {
+    console.log('Test connection clicked');
     try {
       setIsTesting(true);
       setTestResult(null);
+      console.log('Calling electronAPI.testConnection with:', { apiBaseUrl, apiKey });
       const result = await window.electronAPI?.testConnection(apiBaseUrl, apiKey);
+      console.log('Test connection result:', result);
       setTestResult(result);
     } catch (err) {
+      console.error('Test connection error:', err);
       setTestResult({
         success: false,
         message: err instanceof Error ? err.message : 'Connection test failed',

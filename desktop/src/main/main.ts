@@ -17,7 +17,7 @@ function createWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, isDev ? '../preload.js' : 'preload.js'),
     },
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
@@ -38,16 +38,17 @@ function createWindow(): void {
 
 // App lifecycle
 app.whenReady().then(() => {
-  // Register IPC handlers
+  createWindow();
+
+  // Register IPC handlers after window is created
   if (mainWindow) {
     registerSettingsIpc(mainWindow);
+    console.log('IPC handlers registered');
   }
 
   // Register app info handlers
   ipcMain.handle('app:get-version', () => app.getVersion());
   ipcMain.handle('app:get-platform', () => process.platform);
-
-  createWindow();
 
   app.on('activate', () => {
     // On macOS, re-create window when dock icon is clicked
