@@ -46,7 +46,7 @@ async function gotoWithRetry(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      await page.goto(url, { waitUntil: "networkidle" });
+      await page.goto(url, { waitUntil: "domcontentloaded" });
       return;
     } catch (err) {
       const errorMessage =
