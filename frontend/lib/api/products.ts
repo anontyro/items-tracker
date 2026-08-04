@@ -56,14 +56,25 @@ export interface ProductHistoryResponse {
   items: PriceHistoryPoint[];
 }
 
-const getBaseUrl = () => {
-  const baseUrl =
-    typeof window === "undefined"
-      ? process.env.NEXT_PUBLIC_APP_URL
-      : window.location.origin;
-
-  return baseUrl;
-};
+// Server-side: call the NestJS backend directly (avoids self-fetching the
+// Next.js API proxy, which fails with ECONNREFUSED in SSR).
+// Client-side: call the Next.js /api/* proxy routes normally.
+function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  if (typeof window === "undefined") {
+    const backendBase = (
+      process.env.BACKEND_API_URL || "http://localhost:3005"
+    ).replace(/\/$/, "");
+    const backendPath = path.replace(/^\/api\//, "/v1/");
+    return fetch(`${backendBase}${backendPath}`, {
+      ...init,
+      headers: {
+        "x-api-key": process.env.FRONTEND_API_KEY || "",
+        ...(init?.headers as Record<string, string>),
+      },
+    });
+  }
+  return fetch(path, init);
+}
 
 export async function fetchProducts(options: {
   q?: string;
@@ -73,21 +84,11 @@ export async function fetchProducts(options: {
 }): Promise<ProductSearchResponse> {
   const { q = "", limit = 50, offset = 0, siteId } = options;
 
-  const url = new URL("/api/products", getBaseUrl());
-  if (q) {
-    url.searchParams.set("q", q);
-  }
-  url.searchParams.set("limit", String(limit));
-  url.searchParams.set("offset", String(offset));
-  if (siteId) {
-    url.searchParams.set("siteId", siteId);
-  }
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (q) params.set("q", q);
+  if (siteId) params.set("siteId", siteId);
 
-  console.log("url is", url.toString());
-
-  const res = await fetch(url.toString(), {
-    method: "GET",
-  });
+  const res = await apiFetch(`/api/products?${params}`);
 
   if (!res.ok) {
     throw new Error(`Failed to fetch products: ${res.status}`);
@@ -103,20 +104,12 @@ export async function fetchGroupedProducts(options: {
 }): Promise<GroupedProductsResponse> {
   const { q = "", siteId, bggId } = options;
 
-  const url = new URL("/api/products/grouped", getBaseUrl());
-  if (q) {
-    url.searchParams.set("q", q);
-  }
-  if (siteId) {
-    url.searchParams.set("siteId", siteId);
-  }
-  if (bggId) {
-    url.searchParams.set("bggId", bggId);
-  }
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (siteId) params.set("siteId", siteId);
+  if (bggId) params.set("bggId", bggId);
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-  });
+  const res = await apiFetch(`/api/products/grouped?${params}`);
 
   if (!res.ok) {
     throw new Error(`Failed to fetch grouped products: ${res.status}`);
@@ -126,13 +119,7 @@ export async function fetchGroupedProducts(options: {
 }
 
 export async function fetchProductDetail(id: string): Promise<ProductDetail> {
-  const url = new URL(`/api/products/${encodeURIComponent(id)}`, getBaseUrl());
-
-  console.log("url is", url.toString());
-
-  const res = await fetch(url.toString(), {
-    method: "GET",
-  });
+  const res = await apiFetch(`/api/products/${encodeURIComponent(id)}`);
 
   if (!res.ok) {
     throw new Error(`Failed to fetch product detail: ${res.status}`);
@@ -147,16 +134,10 @@ export async function fetchProductHistory(options: {
 }): Promise<ProductHistoryResponse> {
   const { productId, limit = 365 } = options;
 
-  const url = new URL(
-    `/api/products/${encodeURIComponent(productId)}/history`,
-    getBaseUrl(),
+  const params = new URLSearchParams({ limit: String(limit) });
+  const res = await apiFetch(
+    `/api/products/${encodeURIComponent(productId)}/history?${params}`,
   );
-
-  url.searchParams.set("limit", String(limit));
-
-  const res = await fetch(url.toString(), {
-    method: "GET",
-  });
 
   if (!res.ok) {
     throw new Error(`Failed to fetch product history: ${res.status}`);
@@ -172,16 +153,9 @@ export async function fetchProductsMissingBgg(options: {
 }): Promise<ProductSearchResponse> {
   const { limit = 50, offset = 0, adminApiKey } = options;
 
-  const url = new URL("/api/products/admin/missing-bgg", getBaseUrl());
-
-  url.searchParams.set("limit", String(limit));
-  url.searchParams.set("offset", String(offset));
-
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "x-admin-api-key": adminApiKey,
-    },
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const res = await apiFetch(`/api/products/admin/missing-bgg?${params}`, {
+    headers: { "x-admin-api-key": adminApiKey },
   });
 
   if (!res.ok) {
@@ -199,19 +173,17 @@ export async function updateProductBggId(options: {
 }): Promise<ProductDetail> {
   const { productId, bggId, bggCanonicalName, adminApiKey } = options;
 
-  const url = new URL(
+  const res = await apiFetch(
     `/api/products/admin/${encodeURIComponent(productId)}/bgg`,
-    getBaseUrl(),
-  );
-
-  const res = await fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-api-key": adminApiKey,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-api-key": adminApiKey,
+      },
+      body: JSON.stringify({ bggId, bggCanonicalName }),
     },
-    body: JSON.stringify({ bggId, bggCanonicalName }),
-  });
+  );
 
   if (!res.ok) {
     throw new Error(`Failed to update product BGG ID: ${res.status}`);
