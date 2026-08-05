@@ -19,6 +19,7 @@ export interface NormalizedPriceHistoryInput {
   price: number;
   rrp: number | null;
   availability: boolean | null;
+  isPreorder: boolean | null;
   currencyCode: string | null; // ISO 4217 where possible, e.g. "GBP"
   scrapedAt: string; // ISO timestamp
 }
@@ -37,11 +38,26 @@ function deriveAvailabilityFlag(
     return true;
   }
 
+  // Pre-order items (e.g. chaos-cards) are purchasable, so treat them as
+  // available even though they aren't "in stock" yet.
+  if (text.includes("pre-order") || text.includes("preorder")) {
+    return true;
+  }
+
   if (text.includes("out of stock") || text.includes("restock")) {
     return false;
   }
 
   return null;
+}
+
+function derivePreorderFlag(availabilityText: string | null): boolean | null {
+  if (!availabilityText) {
+    return null;
+  }
+
+  const text = availabilityText.toLowerCase();
+  return text.includes("pre-order") || text.includes("preorder");
 }
 
 function deriveCurrencyCode(
@@ -89,6 +105,7 @@ export function normalizeRowsForSite(
     .filter((row) => row.price != null && row.url != null && row.name != null)
     .map((row) => {
       const availability = deriveAvailabilityFlag(row.availability_text);
+      const isPreorder = derivePreorderFlag(row.availability_text);
       const currencyCode = deriveCurrencyCode(
         row.price_text ?? row.rrp_text ?? undefined,
       );
@@ -131,6 +148,7 @@ export function normalizeRowsForSite(
         price: row.price as number,
         rrp: row.rrp,
         availability,
+        isPreorder,
         currencyCode,
         scrapedAt: row.scraped_at,
       };

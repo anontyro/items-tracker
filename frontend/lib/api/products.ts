@@ -49,6 +49,7 @@ export interface PriceHistoryPoint {
   price: string; // Prisma Decimal serialized as string
   rrp: string | null;
   availability: boolean | null;
+  isPreorder: boolean | null;
   scrapedAt: string;
 }
 

@@ -227,7 +227,10 @@ const ItemDetails: React.FC<{
   let availabilityColor: string = "text.disabled";
   let availabilityLabel = "Availability unknown";
 
-  if (availabilityStatus === true) {
+  if (latestPoint?.isPreorder === true) {
+    availabilityColor = "info.main";
+    availabilityLabel = "Available for pre-order";
+  } else if (availabilityStatus === true) {
     availabilityColor = "success.main";
     availabilityLabel = "In stock";
   } else if (availabilityStatus === false) {
@@ -636,6 +639,26 @@ const ItemDetails: React.FC<{
                       >
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                           Clownfish
+                        </Typography>
+                      </IconButton>
+                    </Tooltip>
+                  );
+                }
+
+                if (site.siteId === "chaos-cards") {
+                  return (
+                    <Tooltip title="View on Chaos Cards" key={site.siteId}>
+                      <IconButton
+                        component={MuiLink}
+                        href={site.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        sx={{ p: 0.5 }}
+                        aria-label="View on Chaos Cards"
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Chaos Cards
                         </Typography>
                       </IconButton>
                     </Tooltip>

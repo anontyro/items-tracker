@@ -121,6 +121,7 @@ function resolvePrimarySite(product: any | undefined): PrimarySite {
 
   let hasZatu = false;
   let hasClownfish = false;
+  let hasChaosCards = false;
 
   for (const source of sources) {
     const data = source.additionalData as
@@ -139,6 +140,9 @@ function resolvePrimarySite(product: any | undefined): PrimarySite {
     if (siteId === "clownfish-games") {
       hasClownfish = true;
     }
+    if (siteId === "chaos-cards") {
+      hasChaosCards = true;
+    }
   }
 
   if (hasZatu) {
@@ -146,6 +150,9 @@ function resolvePrimarySite(product: any | undefined): PrimarySite {
   }
   if (hasClownfish) {
     return { slug: "clownfish-games", siteId: "clownfish-games" };
+  }
+  if (hasChaosCards) {
+    return { slug: "chaos-cards", siteId: "chaos-cards" };
   }
 
   return { slug: "zatu-uk", siteId: null };
@@ -230,6 +237,11 @@ function WatchlistCard({ item }: { item: WatchlistItem }) {
               width={32}
               height={18}
             />
+          )}
+          {primary.siteId === "chaos-cards" && (
+            <Typography variant="caption" sx={{ fontWeight: 600 }}>
+              Chaos Cards
+            </Typography>
           )}
         </Stack>
       </CardContent>

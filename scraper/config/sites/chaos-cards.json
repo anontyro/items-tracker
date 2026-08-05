@@ -1,0 +1,23 @@
+{
+  "siteId": "chaos-cards",
+  "siteName": "Chaos Cards",
+  "baseUrl": "https://www.chaoscards.co.uk",
+  "listPageUrl": "https://www.chaoscards.co.uk/shop/board-games/all-board-games/sort/release-date-newest-first/show/64-products",
+  "itemType": "board-game",
+  "selectors": {
+    "productList": "#prod_list_list .prod-el",
+    "productName": "a.prod-el__link",
+    "productPrice": ".prod-el__pricing-price",
+    "productAvailability": "p.prod-el__availability",
+    "productRrp": ".prod-el__pricing-small:text(\"RRP\")",
+    "productUrl": "a.prod-el__link",
+    "productSku": "a.prod-el__link",
+    "productImageList": "img.prod-el__image",
+    "productImageDetail": "img.prod-el__image"
+  },
+  "rateLimitMs": 10000,
+  "paginationSelector": "nav.pagi a",
+  "isActive": true,
+  "followProductPageForImage": false,
+  "freshContextPerPage": true
+}

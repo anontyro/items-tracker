@@ -24,6 +24,11 @@ export interface SiteConfig {
   paginationSelector: string;
   isActive: boolean;
   followProductPageForImage?: boolean;
+  // When true, each list page navigation gets a brand-new browser context
+  // (fresh cookies/session) instead of reusing one context across pagination.
+  // Needed for sites whose bot protection challenges repeat navigations
+  // within the same session.
+  freshContextPerPage?: boolean;
 }
 
 const SITES_DIR = path.resolve(__dirname, "../../config/sites");
@@ -88,6 +93,10 @@ function validateSiteConfig(raw: any): SiteConfig {
     typeof raw.followProductPageForImage === "boolean"
       ? raw.followProductPageForImage
       : false;
+  const freshContextPerPage =
+    typeof raw.freshContextPerPage === "boolean"
+      ? raw.freshContextPerPage
+      : false;
 
   return {
     siteId,
@@ -100,6 +109,7 @@ function validateSiteConfig(raw: any): SiteConfig {
     paginationSelector,
     isActive,
     followProductPageForImage,
+    freshContextPerPage,
   };
 }
 

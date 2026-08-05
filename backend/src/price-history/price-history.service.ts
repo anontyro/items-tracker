@@ -155,6 +155,7 @@ export class PriceHistoryService {
           rrp:
             snapshot.rrp != null ? new Prisma.Decimal(snapshot.rrp) : undefined,
           availability: snapshot.availability ?? undefined,
+          isPreorder: snapshot.isPreorder ?? undefined,
           scrapedAt,
           scrapeSuccess: true,
           scrapeJobId: undefined,
@@ -167,6 +168,7 @@ export class PriceHistoryService {
           rrp:
             snapshot.rrp != null ? new Prisma.Decimal(snapshot.rrp) : undefined,
           availability: snapshot.availability ?? undefined,
+          isPreorder: snapshot.isPreorder ?? undefined,
           scrapeSuccess: true,
         },
       });

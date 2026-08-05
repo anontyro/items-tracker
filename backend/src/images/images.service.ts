@@ -32,15 +32,35 @@ export class ImagesService {
     return path.join("images", "games", canonicalKey, `primary${safeExt}`);
   }
 
-  private async downloadToFile(url: string, fullPath: string): Promise<void> {
+  private async downloadToFile(
+    url: string,
+    fullPath: string,
+    refererUrl?: string,
+  ): Promise<void> {
     await fsp.mkdir(path.dirname(fullPath), { recursive: true });
 
     const client = url.startsWith("https:") ? https : http;
 
+    const referer = (() => {
+      try {
+        return new URL(refererUrl ?? url).origin;
+      } catch {
+        return new URL(url).origin;
+      }
+    })();
+
+    const requestOptions = {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Referer: referer,
+      },
+    };
+
     await new Promise<void>((resolve, reject) => {
       const fileStream = fs.createWriteStream(fullPath);
 
-      const request = client.get(url, (response) => {
+      const request = client.get(url, requestOptions, (response) => {
         if (response.statusCode && response.statusCode >= 400) {
           fileStream.close();
           void fsp.unlink(fullPath).catch(() => undefined);
@@ -135,7 +155,7 @@ export class ImagesService {
       "Downloading image from scrape URL",
     );
 
-    await this.downloadToFile(remoteImageUrl, fullPath);
+    await this.downloadToFile(remoteImageUrl, fullPath, sourceUrl);
 
     if (existing) {
       return this.prisma.productImage.update({

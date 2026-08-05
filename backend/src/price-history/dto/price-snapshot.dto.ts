@@ -16,6 +16,7 @@ export class PriceSnapshotDto {
   currencyCode?: string | null;
   rrp?: number | null;
   availability?: boolean | null;
+  isPreorder?: boolean | null;
   scrapedAt!: string;
   raw!: RawSnapshotMetaDto;
 }

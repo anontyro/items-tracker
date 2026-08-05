@@ -19,6 +19,7 @@ export interface PriceSnapshotPayload {
   currencyCode?: string | null;
   rrp?: number | null;
   availability?: boolean | null;
+  isPreorder?: boolean | null;
   scrapedAt: string;
   raw: RawSnapshotMetaPayload;
 }
@@ -79,8 +80,16 @@ function chunkArray<T>(items: T[], size: number): T[][] {
 function toPriceSnapshotPayload(
   normalized: NormalizedPriceHistoryInput,
 ): PriceSnapshotPayload {
-  const { product, source, price, rrp, availability, currencyCode, scrapedAt } =
-    normalized;
+  const {
+    product,
+    source,
+    price,
+    rrp,
+    availability,
+    isPreorder,
+    currencyCode,
+    scrapedAt,
+  } = normalized;
 
   const additional = source.additionalData ?? {};
 
@@ -94,6 +103,7 @@ function toPriceSnapshotPayload(
     currencyCode: currencyCode ?? null,
     rrp: rrp ?? null,
     availability: availability ?? null,
+    isPreorder: isPreorder ?? null,
     scrapedAt,
     raw: {
       siteId: String(additional.siteId ?? ""),

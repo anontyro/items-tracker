@@ -104,8 +104,8 @@ export async function* scrapeSiteWithPlaywright(
     process.env.PLAYWRIGHT_USER_AGENT ??
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-  const context = await browser.newContext({ userAgent });
-  const page = await context.newPage();
+  let context = await browser.newContext({ userAgent });
+  let page = await context.newPage();
 
   const maxPages = options?.maxPages;
   const hasMaxPages = typeof maxPages === "number" && maxPages > 0;
@@ -140,6 +140,13 @@ export async function* scrapeSiteWithPlaywright(
         break;
       }
       visitedListPageUrls.add(nextUrl);
+
+      if (siteConfig.freshContextPerPage && currentPage > 1) {
+        await page.close();
+        await context.close();
+        context = await browser.newContext({ userAgent });
+        page = await context.newPage();
+      }
 
       try {
         await gotoWithRetry(page, nextUrl, logger, {
@@ -240,7 +247,9 @@ export async function* scrapeSiteWithPlaywright(
           const sourceProductId = await item.getAttribute("data-product-id");
 
           const nameElement = item.locator(siteConfig.selectors.productName);
-          const nameText = (await nameElement.textContent()) ?? "";
+          const titleAttr = (await nameElement.getAttribute("title"))?.trim();
+          const nameText =
+            titleAttr || ((await nameElement.textContent()) ?? "");
           const name = nameText.trim();
 
           const href = (await nameElement.getAttribute("href")) ?? "";

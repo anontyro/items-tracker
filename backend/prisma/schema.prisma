@@ -52,6 +52,7 @@ model PriceHistory {
   sourceId       String
   price          Decimal   @db.Decimal(10, 2)
   availability   Boolean?  // true, false, null for unknown
+  isPreorder     Boolean?  // true, false, null for unknown/not applicable
   rrp            Decimal?  @db.Decimal(10, 2)
   scrapedAt      DateTime  @default(now())
 

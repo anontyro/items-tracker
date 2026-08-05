@@ -1,0 +1,580 @@
+<main>
+    <div class="product">
+        <div class="product__header">
+            <div id="breadcrumb_list">
+                <ul id="breadcrumb" class="breadcrumb no_print">
+                    <li class="breadcrumb__element first">
+                        <a class="breadcrumb__link" title="Home" href="/"
+                            ><span>Home</span></a
+                        >
+                    </li>
+                    <li class="breadcrumb__element">
+                        <a
+                            class="breadcrumb__link"
+                            title="Board Games"
+                            href="/shop/board-games"
+                            ><span>Board Games</span></a
+                        >
+                    </li>
+                    <li class="breadcrumb__element penultimate">
+                        <a
+                            class="breadcrumb__link"
+                            title="All Board Games"
+                            href="/shop/board-games/all-board-games"
+                            ><span>All Board Games</span></a
+                        >
+                    </li>
+                    <li class="breadcrumb__element sel last">
+                        <a
+                            class="breadcrumb__link"
+                            title="Legacy of Eastbrook Hills"
+                            href="/prod/all-board-games/legacy-of-eastbrook-hills"
+                            ><span>Legacy of Eastbrook Hills</span></a
+                        >
+                    </li>
+                </ul>
+            </div>
+            <div class="product__store-link-wrap">
+                <a
+                    class="product__store-link"
+                    href="/brand/kolossal-games"
+                    title="Visit the Kolossal Games store"
+                    ><span>Visit the </span>Kolossal Games<span> store</span></a
+                >
+            </div>
+            <div class="product__code-header">Code: BG-MATKOLLEG001678</div>
+        </div>
+        <div class="product__inner">
+            <div class="product__top">
+                <ul
+                    class="prod_det_fields top product-section product-section--top"
+                >
+                    <li
+                        id="prod_det_404658_title_top"
+                        class="prod_det_title_top"
+                    >
+                        <h2 id="prod_title" class="product__title">
+                            Legacy of Eastbrook Hills
+                        </h2>
+                    </li>
+                    <li
+                        id="prod_det_404658_read_desc_top"
+                        class="prod_det_read_desc_top"
+                    >
+                        <a
+                            class="product__description-top"
+                            href="#read-desc"
+                            title="Read description"
+                            >Read description</a
+                        >
+                    </li>
+                </ul>
+            </div>
+            <div class="product__left">
+                <div
+                    class="prod-images__wrapper"
+                    style="
+                        background-image: url(&quot;https://cdn.chaoscards.co.uk/public/images/bgs/chaos_repeat.png&quot;);
+                    "
+                >
+                    <div class="prod-images__label">
+                        <span class="prod-label prod-label--pre-order"
+                            >Pre-order</span
+                        >
+                    </div>
+                    <div class="prod-images">
+                        <ul
+                            class="prod-images__list owl-carousel owl-loaded owl-drag"
+                        >
+                            <div class="owl-stage-outer">
+                                <div
+                                    class="owl-stage"
+                                    style="
+                                        transform: translate3d(0px, 0px, 0px);
+                                        transition: all;
+                                        width: 245px;
+                                    "
+                                >
+                                    <div
+                                        class="owl-item active"
+                                        style="width: 245px"
+                                    >
+                                        <li
+                                            class="prod-images__element"
+                                            data-position="0"
+                                        >
+                                            <a
+                                                href="https://cdn.chaoscards.co.uk/uploads/prod_img/2_337499_e.png?v=-62169983925"
+                                                rel="nofollow noopener"
+                                                class="prod-images__link enlarged-images"
+                                                title="Click to enlarge"
+                                                ><div
+                                                    class="prod-images__image-wrap"
+                                                >
+                                                    <img
+                                                        class="prod-images__image"
+                                                        loading="lazy"
+                                                        src="https://cdn.chaoscards.co.uk/uploads/prod_img/2_337499_e.png?v=-62169983925"
+                                                        alt="Legacy of Eastbrook Hills"
+                                                    /></div
+                                            ></a>
+                                        </li>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="owl-nav disabled">
+                                <button
+                                    type="button"
+                                    role="presentation"
+                                    class="owl-prev"
+                                >
+                                    <span aria-label="Previous">‹</span></button
+                                ><span class="owl-page page disabled"
+                                    >01/01</span
+                                ><button
+                                    type="button"
+                                    role="presentation"
+                                    class="owl-next"
+                                >
+                                    <span aria-label="Next">›</span>
+                                </button>
+                            </div>
+                            <div class="owl-dots disabled"></div>
+                        </ul>
+                    </div>
+                </div>
+                <script nonce="">
+                    var evo_load_callbacks = evo_load_callbacks || [];
+                    evo_load_callbacks.push(function () {
+                        initProdImages();
+                    });
+
+                    function initProdImages() {
+                        var main_images = $(".prod-images__list").owlCarousel({
+                            items: 1,
+                            nav: false,
+                            dots: false,
+                            //mouseDrag: false,
+                            //touchDrag: false,
+                            lazyLoad: true,
+                            animateIn: "fadeIn",
+                            animateOut: "fadeOut",
+                        });
+                        $("body").on(
+                            "click",
+                            ".prod-images__link",
+                            function (e) {
+                                e.preventDefault();
+                                if (
+                                    $(this).attr("href") !== undefined &&
+                                    $(this).attr("href") !== ""
+                                ) {
+                                    $.colorbox({
+                                        href: $(this).attr("href"),
+                                        maxWidth: "85%",
+                                        className: "colorbox-product-image",
+                                        rel: "enlarged-images",
+                                    });
+                                }
+
+                                if ($("#prod-imgs-e").length == 0) {
+                                    $("body").append(
+                                        '<div id="prod-imgs-e" style="display:none"></div>',
+                                    );
+                                    if ($(".prod-images__link").length > 0) {
+                                        var added = [];
+                                        $(".prod-images__link").each(
+                                            function (i, element) {
+                                                var href = element.href;
+                                                if (
+                                                    typeof added[href] ==
+                                                    "undefined"
+                                                ) {
+                                                    added[href] = true;
+                                                    var $cloned =
+                                                        $("<a>Enlarge</a>");
+                                                    $cloned.attr(
+                                                        "rel",
+                                                        "prod_imgs_e",
+                                                    );
+                                                    $cloned.attr("href", href);
+                                                    $("#prod-imgs-e").append(
+                                                        $cloned,
+                                                    );
+                                                }
+                                            },
+                                        );
+                                    }
+                                }
+                                $(
+                                    '#prod-imgs-e a[href="' +
+                                        $(this).attr("href") +
+                                        '"]',
+                                ).trigger("click");
+                                return false;
+                            },
+                        );
+                    }
+                </script>
+            </div>
+            <div class="product__right">
+                <form
+                    action="#"
+                    method="post"
+                    data-ajax-loading-target="#add_to_cart_form_404658 .submit_button"
+                    data-ajax-change-loading-target="#add_to_cart_form_404658 #prod_det_variations"
+                    data-ajax-submit="cart:do_add_to_cart"
+                    data-ajax-change-submit="prod_var:do_change_var"
+                    data-ajax-hash='["c9dbd1dd4ec7c7f9d0719d6289d7b90ea505aefbf0d53ad2ba1189eea4a11b13e8dfeaba9df924a250248694d280da3a349b1839a07d9e3dc2ba80760bdc981d","a99caf58e5a2846d9e7a98faa4db7d98d1743c595a1f99e226e0e886b299286c464208ab7cc647dbc4257641d19a30c6f84bdff95d1b543500b9582468304a92"]'
+                    id="add_to_cart_form_404658"
+                >
+                    <ul
+                        class="prod_det_fields left product-section product-section--title"
+                    >
+                        <li id="prod_det_404658_title" class="prod_det_title">
+                            <h1 id="prod_title" class="product__title">
+                                Legacy of Eastbrook Hills
+                            </h1>
+                        </li>
+                        <li
+                            id="prod_det_404658_read_desc"
+                            class="prod_det_read_desc"
+                        >
+                            <a
+                                class="product__description-top"
+                                href="#read-desc"
+                                title="Read description"
+                                >Read description</a
+                            >
+                        </li>
+                    </ul>
+                    <ul
+                        class="prod_det_fields left product-section product-section--stock"
+                    >
+                        <li
+                            id="prod_det_404658_preorder"
+                            class="prod_det_preorder"
+                        >
+                            <div class="product__pre-order">
+                                <strong class="product__pre-order__available">
+                                    Available for Pre-Order. </strong
+                                ><span class="product__pre-order__expected"
+                                    >Expected Jul-Sep 2026</span
+                                ><a
+                                    class="product__pre-order-info"
+                                    href="/pre-orders"
+                                    target="_blank"
+                                ></a>
+                            </div>
+                        </li>
+                    </ul>
+                    <ul
+                        class="prod_det_fields left product-section product-section--price"
+                    >
+                        <li id="prod_det_404658_price" class="prod_det_price">
+                            <div class="pricing_wrapper">
+                                <p class="price_inc">
+                                    <span class="currency_symbol">£</span
+                                    ><span>59.95</span>
+                                </p>
+                                <p class="price_rrp">
+                                    <label>RRP</label
+                                    ><span class="currency_symbol">£</span
+                                    ><span>72.49</span>
+                                </p>
+                                <p class="price_percentage_diff">
+                                    <span>17.30% OFF</span>
+                                </p>
+                            </div>
+                        </li>
+                    </ul>
+                    <ul
+                        class="prod_det_fields left product-section product-section--stock"
+                    >
+                        <li id="prod_det_404658_stock" class="prod_det_stock">
+                            <div class="product-detail">
+                                <div
+                                    class="product-detail__icon icon icon--box_check"
+                                ></div>
+                                <div class="product-detail__content">
+                                    Available for Pre-order
+                                </div>
+                            </div>
+                        </li>
+                        <li
+                            id="prod_det_404658_dispatch_message"
+                            class="prod_det_dispatch_message"
+                        >
+                            <div
+                                class="product-detail product__dispatch product__dispatch--preorder"
+                            >
+                                <div
+                                    class="product-detail__icon icon icon--shipping_timed"
+                                ></div>
+                                <div class="product-detail__content">
+                                    Dispatched day before release, together with
+                                    all other items in your order.
+                                    <span class="dispatch-popup"
+                                        ><a
+                                            href="#dispatch-more-info"
+                                            class="dispatch-popup__text"
+                                            >More info</a
+                                        ><span class="dispatch-popup__popup">
+                                            Please note that any items ordered
+                                            together with this item will ship
+                                            upon the UK release of this product.
+                                            If you require other items sooner,
+                                            please place a separate order for
+                                            them.
+                                        </span></span
+                                    >
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <ul
+                        class="prod_det_fields left product-section product-section--add-to-cart"
+                    >
+                        <li
+                            id="prod_det_404658_max_qty"
+                            class="prod_det_max_qty"
+                        >
+                            <div id="max-qty-popup" class="max-qty">
+                                <div class="max-qty__inner">
+                                    <div
+                                        id="max-qty-popup-message"
+                                        class="max-qty__content"
+                                    >
+                                        <span data-nosnippet=""
+                                            >Customers are limited to only
+                                            purchasing 4 of this product.</span
+                                        >
+                                    </div>
+                                    <a
+                                        class="max-qty__close icon icon--cross"
+                                    ></a>
+                                </div>
+                            </div>
+                        </li>
+                        <li
+                            id="prod_det_404658_add_qty"
+                            class="prod_det_add_qty"
+                        >
+                            <div
+                                id="prod_stock_wrapper"
+                                class="prod_stock_wrapper prod-stock-wrapper"
+                            >
+                                <div class="prod-stock-wrapper__left">
+                                    <div class="prod-stock-wrapper__label">
+                                        Quantity
+                                    </div>
+                                </div>
+                                <ul>
+                                    <li class="qty_levels qty_minus">
+                                        <a
+                                            class="qty_decrease disabled"
+                                            title="Decrease quantity by 1"
+                                            href="#prod-qty-decrease"
+                                            >-</a
+                                        >
+                                    </li>
+                                    <li class="qty">
+                                        <input
+                                            id="qty"
+                                            data-min="1"
+                                            data-max="4"
+                                            data-increment-qty="1"
+                                            type="number"
+                                            name="qty"
+                                            maxlength="3"
+                                            class="qty_selector qty"
+                                            data-keyup-change=""
+                                            value="1"
+                                        />
+                                    </li>
+                                    <li class="qty_levels qty_plus">
+                                        <a
+                                            class="qty_increase"
+                                            title="Increase quantity by 1"
+                                            href="#prod-qty-increase"
+                                            >+</a
+                                        >
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li
+                            id="prod_det_404658_add_to_cart"
+                            class="prod_det_add_to_cart"
+                        >
+                            <p class="cf add_to_cart">
+                                <a
+                                    id="prod_404658_add_to_cart"
+                                    class="submit_button button addtocart"
+                                    data-analytics-click="/added_to_cart,event:Product detail:Add to cart:Legacy of Eastbrook Hills:59.95"
+                                    data-analytics-data='{"id":404658,"name":"Legacy of Eastbrook Hills","category":"All Board Games","brand":"","quantity":1}'
+                                    data-analytics-action="add"
+                                    rel="noindex"
+                                    href="#add-to-cart"
+                                    title="Pre-order now"
+                                    >Pre-order now</a
+                                >
+                            </p>
+                        </li>
+                        <li
+                            id="prod_det_404658_add_to_wishlist"
+                            class="prod_det_add_to_wishlist"
+                        >
+                            <a
+                                id="prod-wishlist-404658"
+                                class="button--tertiary detail-wishlist"
+                                data-ajax-click="prod:do_toggle_wishlist"
+                                data-ajax-post='{"pid":404658,"for_list":0}'
+                                rel="noindex"
+                                href="#add-to-wishlist-404658"
+                                title="Add to wishlist"
+                                data-ajax-hash="4063af40041bf75d342f91747265093a8a157ceb3b31b22faa52eca6045b86043e07b80a12e8c62793c1175d8e8811b0b1d2b46a36754801ed4449c49bcbab69"
+                                data-ajax-loading-target="#prod-wishlist-404658"
+                                ><span class="button__text"
+                                    >Add to wishlist</span
+                                ></a
+                            >
+                        </li>
+                    </ul>
+                    <ul
+                        class="prod_det_fields left product-section product-section--links"
+                    >
+                        <li id="prod_det_404658_points" class="prod_det_points">
+                            <div class="product-points">
+                                <div class="product-detail">
+                                    <div
+                                        class="product-detail__icon icon icon--medal_filled"
+                                    ></div>
+                                    <div class="product-detail__content">
+                                        Purchase could earn you
+                                        <strong class="product-points__earn"
+                                            >5995</strong
+                                        >
+                                        loyalty points.
+                                        <a
+                                            class="product-points__link"
+                                            href="/account/login?r=%2Fprod%2Fall-board-games%2Flegacy-of-eastbrook-hills"
+                                            title="Sign in"
+                                            rel="nofollow noopener"
+                                            >Sign in</a
+                                        >
+                                        or
+                                        <a
+                                            class="product-points__link"
+                                            href="/account/register?r=%2Fprod%2Fall-board-games%2Flegacy-of-eastbrook-hills"
+                                            title="Create an Account"
+                                            rel="nofollow noopener"
+                                            >Create an Account</a
+                                        >
+                                        to earn points towards exclusive
+                                        benefits!
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li id="prod_det_404658_links" class="prod_det_links">
+                            <div class="product__detail-links">
+                                <script
+                                    src="https://www.paypal.com/sdk/js?client-id=AebNJgF7zUMFzWVkCiaoxNPwqiNHqKZkGeJev5g_g2_CNSfA543BebnLh0jP1xAGTaRVEvzRqaLjPi0j&amp;components=messages"
+                                    data-uid-auto="uid_hpjsuvrxzthtvndisgkushvomwejhw"
+                                ></script>
+                                <div class="paypal-message">
+                                    <div
+                                        data-pp-message=""
+                                        data-pp-placement="product"
+                                        data-pp-amount="59.95"
+                                        data-pp-id="1"
+                                        style=""
+                                    >
+                                        <span
+                                            id="zoid-paypal-message-uid_69fd86ea30_mtk6ntc6ntm"
+                                            ><style nonce="">
+                                                #zoid-paypal-message-uid_69fd86ea30_mtk6ntc6ntm
+                                                    > iframe {
+                                                    width: 100%;
+                                                    height: 0;
+                                                }
+
+                                                #zoid-paypal-message-uid_69fd86ea30_mtk6ntc6ntm
+                                                    > iframe:nth-of-type(2) {
+                                                    display: none;
+                                                }</style
+                                            ><iframe
+                                                style="
+                                                    background-color: transparent;
+                                                    border: medium;
+                                                    height: 18px;
+                                                    opacity: 1;
+                                                "
+                                                allowtransparency="true"
+                                                name="__zoid__paypal_message__eyJzZW5kZXIiOnsiZG9tYWluIjoiaHR0cHM6Ly93d3cuY2hhb3NjYXJkcy5jby51ayJ9LCJtZXRhRGF0YSI6eyJ3aW5kb3dSZWYiOnsidHlwZSI6InBhcmVudCIsImRpc3RhbmNlIjowfX0sInJlZmVyZW5jZSI6eyJ0eXBlIjoicmF3IiwidmFsIjoie1widWlkXCI6XCJ6b2lkLXBheXBhbC1tZXNzYWdlLXVpZF82OWZkODZlYTMwX210azZudGM2bnRtXCIsXCJjb250ZXh0XCI6XCJpZnJhbWVcIixcInRhZ1wiOlwicGF5cGFsLW1lc3NhZ2VcIixcImNoaWxkRG9tYWluTWF0Y2hcIjp7XCJfX3R5cGVfX1wiOlwicmVnZXhcIixcIl9fdmFsX19cIjpcIlxcXFwucGF5cGFsXFxcXC5jb20oOlxcXFxkKyk/JFwifSxcInZlcnNpb25cIjpcIjEwXzVfNFwiLFwicHJvcHNcIjp7XCJhY2NvdW50XCI6XCJjbGllbnQtaWQ6QWViTkpnRjd6VU1GeldWa0NpYW94TlB3cWlOSHFLWmtHZUpldjVnX2cyX0NOU2ZBNTQzQmVibkxoMGpQMXhBR1RhUlZFdnpScWFMalBpMGpcIixcIm1lcmNoYW50SWRcIjp7XCJfX3R5cGVfX1wiOlwidW5kZWZpbmVkXCJ9LFwiY3VzdG9tZXJJZFwiOntcIl9fdHlwZV9fXCI6XCJ1bmRlZmluZWRcIn0sXCJjdXJyZW5jeVwiOntcIl9fdHlwZV9fXCI6XCJ1bmRlZmluZWRcIn0sXCJhbW91bnRcIjo1OS45NSxcImJ1eWVyQ291bnRyeVwiOntcIl9fdHlwZV9fXCI6XCJ1bmRlZmluZWRcIn0sXCJsYW5ndWFnZVwiOntcIl9fdHlwZV9fXCI6XCJ1bmRlZmluZWRcIn0sXCJsb2NhbGVcIjp7XCJfX3R5cGVfX1wiOlwidW5kZWZpbmVkXCJ9LFwiaWdub3JlQ2FjaGVcIjp7XCJfX3R5cGVfX1wiOlwidW5kZWZpbmVkXCJ9LFwiY2hhbm5lbFwiOlwiVVBTVFJFQU1cIixcImVjVG9rZW5cIjp7XCJfX3R5cGVfX1wiOlwidW5kZWZpbmVkXCJ9LFwiY29udGV4dHVhbENvbXBvbmVudHNcIjp7XCJfX3R5cGVfX1wiOlwidW5kZWZpbmVkXCJ9LFwiY3NwTm9uY2VcIjpcIlwiLFwiZmVhdHVyZXNcIjpcIm5hdGl2ZS1tb2RhbFwiLFwiaW5kZXhcIjpcIjFcIixcInBhZ2VUeXBlXCI6XCJwcm9kdWN0XCIsXCJzdHlsZVwiOntcImxheW91dFwiOlwidGV4dFwifSxcIm9mZmVyXCI6e1wiX190eXBlX19cIjpcInVuZGVmaW5lZFwifSxcIm9uQ2xpY2tcIjp7XCJfX3R5cGVfX1wiOlwiY3Jvc3NfZG9tYWluX2Z1bmN0aW9uXCIsXCJfX3ZhbF9fXCI6e1wiaWRcIjpcInVpZF85M2YzZDdlMTM5X210azZudGM2bnRtXCIsXCJuYW1lXCI6XCJvbkNsaWNrXCJ9fSxcIm9uQXBwbHlcIjp7XCJfX3R5cGVfX1wiOlwidW5kZWZpbmVkXCJ9LFwib25SZWFkeVwiOntcIl9fdHlwZV9fXCI6XCJjcm9zc19kb21haW5fZnVuY3Rpb25cIixcIl9fdmFsX19cIjp7XCJpZFwiOlwidWlkX2VkMTYxMjdkOWFfbXRrNm50YzZudG1cIixcIm5hbWVcIjpcIm9uUmVhZHlcIn19LFwiZ2V0Q29udGFpbmVyXCI6e1wiX190eXBlX19cIjpcImNyb3NzX2RvbWFpbl9mdW5jdGlvblwiLFwiX192YWxfX1wiOntcImlkXCI6XCJ1aWRfNGYyYWIxM2UyNl9tdGs2bnRjNm50bVwiLFwibmFtZVwiOlwiZ2V0Q29udGFpbmVyXCJ9fSxcIm1vZGFsXCI6e1wicmVuZGVyXCI6e1wiX190eXBlX19cIjpcImNyb3NzX2RvbWFpbl9mdW5jdGlvblwiLFwiX192YWxfX1wiOntcImlkXCI6XCJ1aWRfZjNiYzk3MTg1N19tdGs2bnRjNm50bVwiLFwibmFtZVwiOlwiVFwifX0sXCJzaG93XCI6e1wiX190eXBlX19cIjpcImNyb3NzX2RvbWFpbl9mdW5jdGlvblwiLFwiX192YWxfX1wiOntcImlkXCI6XCJ1aWRfMWRlNjAxMmYyZV9tdGs2bnRjNm50bVwiLFwibmFtZVwiOlwiRlwifX0sXCJoaWRlXCI6e1wiX190eXBlX19cIjpcImNyb3NzX2RvbWFpbl9mdW5jdGlvblwiLFwiX192YWxfX1wiOntcImlkXCI6XCJ1aWRfYWFkYjJmMjAwMF9tdGs2bnRjNm50bVwiLFwibmFtZVwiOlwiUFwifX0sXCJ1cGRhdGVQcm9wc1wiOntcIl9fdHlwZV9fXCI6XCJjcm9zc19kb21haW5fZnVuY3Rpb25cIixcIl9fdmFsX19cIjp7XCJpZFwiOlwidWlkXzFhMWQ3YzAwOTRfbXRrNm50YzZudG1cIixcIm5hbWVcIjpcInVwZGF0ZVByb3BzXCJ9fX0sXCJvbkRlc3Ryb3lcIjp7XCJfX3R5cGVfX1wiOlwiY3Jvc3NfZG9tYWluX2Z1bmN0aW9uXCIsXCJfX3ZhbF9fXCI6e1wiaWRcIjpcInVpZF9jODY5ZWFlZmFkX210azZudGM2bnRtXCIsXCJuYW1lXCI6XCJvbkRlc3Ryb3lcIn19LFwib25Ib3ZlclwiOntcIl9fdHlwZV9fXCI6XCJjcm9zc19kb21haW5fZnVuY3Rpb25cIixcIl9fdmFsX19cIjp7XCJpZFwiOlwidWlkX2IwZjc0MTY2ZGJfbXRrNm50YzZudG1cIixcIm5hbWVcIjpcIm9uSG92ZXJcIn19LFwib25NYXJrdXBcIjp7XCJfX3R5cGVfX1wiOlwiY3Jvc3NfZG9tYWluX2Z1bmN0aW9uXCIsXCJfX3ZhbF9fXCI6e1wiaWRcIjpcInVpZF8zZDBiMGI4MTQ1X210azZudGM2bnRtXCIsXCJuYW1lXCI6XCJvbk1hcmt1cFwifX0sXCJwYXllcklkXCI6bnVsbCxcImNsaWVudElkXCI6XCJBZWJOSmdGN3pVTUZ6V1ZrQ2lhb3hOUHdxaU5IcUtaa0dlSmV2NWdfZzJfQ05TZkE1NDNCZWJuTGgwalAxeEFHVGFSVkV2elJxYUxqUGkwalwiLFwibWVyY2hhbnRDb25maWdIYXNoXCI6XCJjOTBkOGY2NDZlNGRkNmY4NGYyN2JhMjFhOWY0ZWQ2NTEzNDFkYTM1XCIsXCJ0cmVhdG1lbnRzSGFzaFwiOlwiZjgzODhiZWY3YzIyNWJkZjMwOWYxZTMwNTQzNTA3ZjY2ZDllOTQzN1wiLFwiZW52XCI6XCJwcm9kdWN0aW9uXCIsXCJ2ZXJzaW9uXCI6XCIxLjkxLjBcIixcImludGVncmF0aW9uVHlwZVwiOlwiU0RLXCIsXCJkZXZpY2VJRFwiOlwidWlkX2VhMWViODU5YTVfbXRrNm50YzZudGlcIixcInNlc3Npb25JRFwiOlwidWlkX2VmZDZjYzk0MTdfbXRrNm50YzZudGlcIixcInNjcmlwdFVJRFwiOlwidWlkX2hwanN1dnJ4enRodHZuZGlzZ2t1c2h2b213ZWpod1wiLFwibWVzc2FnZVJlcXVlc3RJZFwiOlwidWlkXzM1MGZhZjg5MDBfbXRrNm50YzZudG1cIixcImRlYnVnXCI6e1wiX190eXBlX19cIjpcInVuZGVmaW5lZFwifSxcIm1lc3NhZ2VMb2NhdGlvblwiOlwiaHR0cHM6Ly93d3cuY2hhb3NjYXJkcy5jby51ay9wcm9kL2FsbC1ib2FyZC1nYW1lcy9sZWdhY3ktb2YtZWFzdGJyb29rLWhpbGxzXCIsXCJzdGFnZVRhZ1wiOntcIl9fdHlwZV9fXCI6XCJ1bmRlZmluZWRcIn0sXCJwYXJ0bmVyQXR0cmlidXRpb25JZFwiOm51bGwsXCJkZXZUb3VjaHBvaW50XCI6e1wiX190eXBlX19cIjpcInVuZGVmaW5lZFwifSxcImRpc2FibGVTZXRDb29raWVcIjp0cnVlfSxcImV4cG9ydHNcIjp7XCJpbml0XCI6e1wiX190eXBlX19cIjpcImNyb3NzX2RvbWFpbl9mdW5jdGlvblwiLFwiX192YWxfX1wiOntcImlkXCI6XCJ1aWRfOTFlYmE3OWRhOF9tdGs2bnRjNm50bVwiLFwibmFtZVwiOlwiaW5pdFwifX0sXCJjbG9zZVwiOntcIl9fdHlwZV9fXCI6XCJjcm9zc19kb21haW5fZnVuY3Rpb25cIixcIl9fdmFsX19cIjp7XCJpZFwiOlwidWlkX2YwZjhhZDYwOWRfbXRrNm50YzZudG1cIixcIm5hbWVcIjpcImNsb3NlOjptZW1vaXplZFwifX0sXCJjaGVja0Nsb3NlXCI6e1wiX190eXBlX19cIjpcImNyb3NzX2RvbWFpbl9mdW5jdGlvblwiLFwiX192YWxfX1wiOntcImlkXCI6XCJ1aWRfZjMwNWFiYjViOF9tdGs2bnRjNm50bVwiLFwibmFtZVwiOlwiY2hlY2tDbG9zZVwifX0sXCJyZXNpemVcIjp7XCJfX3R5cGVfX1wiOlwiY3Jvc3NfZG9tYWluX2Z1bmN0aW9uXCIsXCJfX3ZhbF9fXCI6e1wiaWRcIjpcInVpZF8zZmNhMzcxOTIyX210azZudGM2bnRtXCIsXCJuYW1lXCI6XCJIZVwifX0sXCJvbkVycm9yXCI6e1wiX190eXBlX19cIjpcImNyb3NzX2RvbWFpbl9mdW5jdGlvblwiLFwiX192YWxfX1wiOntcImlkXCI6XCJ1aWRfNDYxYzFhMzgwYl9tdGs2bnRjNm50bVwiLFwibmFtZVwiOlwiamVcIn19LFwic2hvd1wiOntcIl9fdHlwZV9fXCI6XCJjcm9zc19kb21haW5fZnVuY3Rpb25cIixcIl9fdmFsX19cIjp7XCJpZFwiOlwidWlkX2I5N2I2NDA2ZDJfbXRrNm50YzZudG1cIixcIm5hbWVcIjpcIm1lXCJ9fSxcImhpZGVcIjp7XCJfX3R5cGVfX1wiOlwiY3Jvc3NfZG9tYWluX2Z1bmN0aW9uXCIsXCJfX3ZhbF9fXCI6e1wiaWRcIjpcInVpZF84NjMyMTkyMTQzX210azZudGM2bnRtXCIsXCJuYW1lXCI6XCJ2ZVwifX0sXCJleHBvcnRcIjp7XCJfX3R5cGVfX1wiOlwiY3Jvc3NfZG9tYWluX2Z1bmN0aW9uXCIsXCJfX3ZhbF9fXCI6e1wiaWRcIjpcInVpZF8xOTRlOTY2Y2M4X210azZudGM2bnRtXCIsXCJuYW1lXCI6XCJZZVwifX19fSJ9fQ__"
+                                                title="PayPal Message 1"
+                                                scrolling="no"
+                                                id="jsx-iframe-745c339173"
+                                                data-width="297"
+                                                data-height="18"
+                                            ></iframe
+                                            ><iframe
+                                                name="__detect_close_uid_65bb78373e_mtk6ntc6ntm__"
+                                                style="display: none"
+                                            ></iframe
+                                        ></span>
+                                    </div>
+                                </div>
+                                <a
+                                    class="product__detail-link icon icon--question_mark"
+                                    data-ajax-click="prod:get_ask_a_question_popup"
+                                    data-ajax-post='{"pid":404658}'
+                                    href="#ask-question"
+                                    title="Ask us a question"
+                                    data-ajax-hash="d1949d0012ebb5b15435caa99c08d3bb4a066c6c2bf057ca01532d88cbba0a22613d6628ec356f1af9779bf0660426b660fcfd24dc02c74e6c003365d020f804"
+                                    >Ask us a question</a
+                                >
+                                <div
+                                    class="product__detail-link product__detail-link--share icon icon--share"
+                                    href="#"
+                                    title="Share"
+                                >
+                                    Share product
+                                    <div class="product__socials">
+                                        <div class="socials socials--share">
+                                            <a
+                                                target="_blank"
+                                                rel="nofollow noopener"
+                                                href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fwww.chaoscards.co.uk/prod/all-board-games/legacy-of-eastbrook-hills"
+                                                class="socials__link icon icon--facebook"
+                                            >
+                                                Facebook </a
+                                            ><a
+                                                target="_blank"
+                                                rel="nofollow noopener"
+                                                href="https://twitter.com/intent/tweet?text=https%3A%2F%2Fwww.chaoscards.co.uk/prod/all-board-games/legacy-of-eastbrook-hills"
+                                                class="socials__link icon icon--twitter"
+                                            >
+                                                Twitter </a
+                                            ><a
+                                                target="_blank"
+                                                rel="nofollow noopener"
+                                                href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A%2F%2Fwww.chaoscards.co.uk/prod/all-board-games/legacy-of-eastbrook-hills&amp;title=Legacy%20of%20Eastbrook%20Hills&amp;summary=&amp;source=Chaos%20Cards"
+                                                class="socials__link icon icon--linkedin"
+                                            >
+                                                LinkedIn
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <input type="hidden" name="pid" id="pid" value="404658" />
+                </form>
+            </div>
+        </div>
+        <div class="ss__recs__bundle"></div>
+    </div>
+</main>

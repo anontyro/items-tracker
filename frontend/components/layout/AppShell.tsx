@@ -38,6 +38,10 @@ const SITE_ROUTE_CONFIG: Record<
     slug: "clownfish-games",
     label: "Clownfish Games",
   },
+  "chaos-cards": {
+    slug: "chaos-cards",
+    label: "Chaos Cards",
+  },
 };
 
 interface AppShellProps {
@@ -173,6 +177,13 @@ export default function AppShell({ children }: AppShellProps) {
               onClick={handleItemsClose}
             >
               ClownFish Games
+            </MenuItem>
+            <MenuItem
+              component={Link}
+              href="/items/chaos-cards"
+              onClick={handleItemsClose}
+            >
+              Chaos Cards
             </MenuItem>
           </Menu>
 

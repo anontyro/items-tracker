@@ -43,6 +43,10 @@ const SITE_ROUTE_CONFIG: Record<
     slug: "clownfish-games",
     label: "Clownfish Games",
   },
+  "chaos-cards": {
+    slug: "chaos-cards",
+    label: "Chaos Cards",
+  },
 };
 
 function getSiteOptions(product: ProductSummary): SiteOption[] {
