@@ -29,6 +29,11 @@ export interface SiteConfig {
   // Needed for sites whose bot protection challenges repeat navigations
   // within the same session.
   freshContextPerPage?: boolean;
+  // "url" (default): pagination is driven by navigating to real hrefs.
+  // "click": there is no per-page URL; pagination is an AJAX widget, so
+  // `paginationSelector` is clicked and the engine waits for the first
+  // product card to change before scraping the next page.
+  paginationMode?: "url" | "click";
 }
 
 const SITES_DIR = path.resolve(__dirname, "../../config/sites");
@@ -97,6 +102,8 @@ function validateSiteConfig(raw: any): SiteConfig {
     typeof raw.freshContextPerPage === "boolean"
       ? raw.freshContextPerPage
       : false;
+  const paginationMode: SiteConfig["paginationMode"] =
+    raw.paginationMode === "click" ? "click" : "url";
 
   return {
     siteId,
@@ -110,6 +117,7 @@ function validateSiteConfig(raw: any): SiteConfig {
     isActive,
     followProductPageForImage,
     freshContextPerPage,
+    paginationMode,
   };
 }
 

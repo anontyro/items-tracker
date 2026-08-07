@@ -47,6 +47,10 @@ const SITE_ROUTE_CONFIG: Record<
     slug: "chaos-cards",
     label: "Chaos Cards",
   },
+  "magic-mad-house": {
+    slug: "magic-mad-house",
+    label: "Magic Mad House",
+  },
 };
 
 function getSiteOptions(product: ProductSummary): SiteOption[] {

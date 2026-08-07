@@ -122,6 +122,7 @@ function resolvePrimarySite(product: any | undefined): PrimarySite {
   let hasZatu = false;
   let hasClownfish = false;
   let hasChaosCards = false;
+  let hasMagicMadHouse = false;
 
   for (const source of sources) {
     const data = source.additionalData as
@@ -143,6 +144,9 @@ function resolvePrimarySite(product: any | undefined): PrimarySite {
     if (siteId === "chaos-cards") {
       hasChaosCards = true;
     }
+    if (siteId === "magic-mad-house") {
+      hasMagicMadHouse = true;
+    }
   }
 
   if (hasZatu) {
@@ -153,6 +157,9 @@ function resolvePrimarySite(product: any | undefined): PrimarySite {
   }
   if (hasChaosCards) {
     return { slug: "chaos-cards", siteId: "chaos-cards" };
+  }
+  if (hasMagicMadHouse) {
+    return { slug: "magic-mad-house", siteId: "magic-mad-house" };
   }
 
   return { slug: "zatu-uk", siteId: null };
@@ -241,6 +248,11 @@ function WatchlistCard({ item }: { item: WatchlistItem }) {
           {primary.siteId === "chaos-cards" && (
             <Typography variant="caption" sx={{ fontWeight: 600 }}>
               Chaos Cards
+            </Typography>
+          )}
+          {primary.siteId === "magic-mad-house" && (
+            <Typography variant="caption" sx={{ fontWeight: 600 }}>
+              Magic Mad House
             </Typography>
           )}
         </Stack>

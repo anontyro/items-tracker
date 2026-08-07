@@ -1,4 +1,4 @@
-import { Page, chromium } from "playwright";
+import { BrowserContext, Page, chromium } from "playwright";
 
 import { SiteConfig } from "../config/siteConfig";
 import fs from "fs/promises";
@@ -85,6 +85,152 @@ async function gotoWithRetry(
   }
 }
 
+async function extractProductsFromPage(
+  page: Page,
+  context: BrowserContext,
+  siteConfig: SiteConfig,
+  logger: pino.Logger,
+  currentPage: number,
+  enableDetailImages: boolean | undefined,
+): Promise<ScrapedProduct[]> {
+  const productLocator = page.locator(siteConfig.selectors.productList);
+  const productCount = await productLocator.count();
+
+  const pageResults: ScrapedProduct[] = [];
+
+  logger.info(
+    {
+      siteId: siteConfig.siteId,
+      page: currentPage,
+      productCount,
+    },
+    "Found products on page",
+  );
+
+  for (let index = 0; index < productCount; index += 1) {
+    const item = productLocator.nth(index);
+
+    const sourceProductId = await item.getAttribute("data-product-id");
+
+    const nameElement = item.locator(siteConfig.selectors.productName);
+    const titleAttr = (await nameElement.getAttribute("title"))?.trim();
+    const nameText = titleAttr || ((await nameElement.textContent()) ?? "");
+    const name = nameText.trim();
+
+    const href = (await nameElement.getAttribute("href")) ?? "";
+    const absoluteUrl =
+      href.startsWith("http://") || href.startsWith("https://")
+        ? href
+        : new URL(href, siteConfig.baseUrl).toString();
+
+    const priceBox = item.locator(siteConfig.selectors.productPrice);
+    const priceAttr = await priceBox.getAttribute("data-now");
+    const priceText = (await priceBox.textContent())?.trim() ?? null;
+    const price = priceAttr ? Number(priceAttr) : parseNumber(priceText);
+
+    let rrp: number | null = null;
+    let rrpText: string | null = null;
+    const rrpBox = item.locator(siteConfig.selectors.productRrp);
+    if (await rrpBox.count()) {
+      const rrpAttr = await rrpBox.getAttribute("data-was");
+      rrpText = (await rrpBox.textContent())?.trim() ?? null;
+      rrp = rrpAttr ? Number(rrpAttr) : parseNumber(rrpText);
+    }
+
+    let availabilityText: string | null = null;
+    const availabilityElement = item.locator(
+      siteConfig.selectors.productAvailability,
+    );
+    if (await availabilityElement.count()) {
+      availabilityText =
+        (await availabilityElement.textContent())?.trim() ?? null;
+    }
+
+    let sku: string | null = null;
+    const skuElement = item.locator(siteConfig.selectors.productSku).first();
+    if (await skuElement.count()) {
+      sku = (await skuElement.getAttribute("data-sku")) ?? null;
+    }
+
+    let imageUrl: string | null = null;
+
+    const listImageSelector = siteConfig.selectors.productImageList;
+    if (listImageSelector) {
+      const imgElement = item.locator(listImageSelector).first();
+      if (await imgElement.count()) {
+        const srcAttr =
+          (await imgElement.getAttribute("data-src")) ??
+          (await imgElement.getAttribute("src"));
+        if (srcAttr) {
+          imageUrl =
+            srcAttr.startsWith("http://") || srcAttr.startsWith("https://")
+              ? srcAttr
+              : new URL(srcAttr, siteConfig.baseUrl).toString();
+        }
+      }
+    }
+
+    if (enableDetailImages && siteConfig.followProductPageForImage) {
+      const detailSelector = siteConfig.selectors.productImageDetail;
+      if (detailSelector) {
+        const detailPage = await context.newPage();
+        try {
+          await detailPage.goto(absoluteUrl, {
+            waitUntil: "domcontentloaded",
+            timeout: 15000,
+          });
+
+          const detailImg = detailPage.locator(detailSelector).first();
+          if (await detailImg.count()) {
+            const srcAttr =
+              (await detailImg.getAttribute("data-src")) ??
+              (await detailImg.getAttribute("src"));
+            if (srcAttr) {
+              const abs =
+                srcAttr.startsWith("http://") || srcAttr.startsWith("https://")
+                  ? srcAttr
+                  : new URL(srcAttr, siteConfig.baseUrl).toString();
+              imageUrl = abs;
+            }
+          }
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : "Unknown error while scraping detail image";
+          logger.warn(
+            {
+              siteId: siteConfig.siteId,
+              page: currentPage,
+              url: absoluteUrl,
+              err: message,
+            },
+            "Failed to scrape image from product detail page; using list image if available",
+          );
+        } finally {
+          await detailPage.close();
+        }
+      }
+    }
+
+    pageResults.push({
+      siteId: siteConfig.siteId,
+      sourceProductId,
+      name,
+      url: absoluteUrl,
+      price,
+      priceText,
+      rrp,
+      rrpText,
+      availabilityText,
+      sku,
+      imageUrl,
+    });
+  }
+
+  return pageResults;
+}
+
 export async function* scrapeSiteWithPlaywright(
   siteConfig: SiteConfig,
   logger: pino.Logger,
@@ -123,6 +269,8 @@ export async function* scrapeSiteWithPlaywright(
   // text and then drive pagination purely via the ?page=N query parameter.
   let derivedTotalPages: number | null = null;
 
+  const isClickPagination = siteConfig.paginationMode === "click";
+
   try {
     while (nextUrl && (!hasMaxPages || currentPage <= maxPages)) {
       logger.info(
@@ -130,33 +278,49 @@ export async function* scrapeSiteWithPlaywright(
         "Scraping product list page",
       );
 
-      // Guard against accidental pagination loops (e.g. bouncing between
-      // the same two list URLs). If we've already seen this URL, stop.
-      if (visitedListPageUrls.has(nextUrl)) {
-        logger.warn(
-          { siteId: siteConfig.siteId, page: currentPage, url: nextUrl },
-          "Detected previously visited list page URL; stopping pagination to avoid loop",
-        );
-        break;
-      }
-      visitedListPageUrls.add(nextUrl);
+      if (isClickPagination) {
+        // There's no per-page URL to navigate to; page 1 is a normal
+        // navigation, and later pages are reached by clicking within the
+        // loop below, so there's nothing to do here on subsequent passes.
+        if (currentPage === 1) {
+          try {
+            await gotoWithRetry(page, nextUrl, logger, {
+              siteId: siteConfig.siteId,
+              page: currentPage,
+            });
+          } catch {
+            break;
+          }
+        }
+      } else {
+        // Guard against accidental pagination loops (e.g. bouncing between
+        // the same two list URLs). If we've already seen this URL, stop.
+        if (visitedListPageUrls.has(nextUrl)) {
+          logger.warn(
+            { siteId: siteConfig.siteId, page: currentPage, url: nextUrl },
+            "Detected previously visited list page URL; stopping pagination to avoid loop",
+          );
+          break;
+        }
+        visitedListPageUrls.add(nextUrl);
 
-      if (siteConfig.freshContextPerPage && currentPage > 1) {
-        await page.close();
-        await context.close();
-        context = await browser.newContext({ userAgent });
-        page = await context.newPage();
-      }
+        if (siteConfig.freshContextPerPage && currentPage > 1) {
+          await page.close();
+          await context.close();
+          context = await browser.newContext({ userAgent });
+          page = await context.newPage();
+        }
 
-      try {
-        await gotoWithRetry(page, nextUrl, logger, {
-          siteId: siteConfig.siteId,
-          page: currentPage,
-        });
-      } catch {
-        // If navigation keeps failing even after retries, stop pagination but
-        // return any products that were successfully scraped from previous pages.
-        break;
+        try {
+          await gotoWithRetry(page, nextUrl, logger, {
+            siteId: siteConfig.siteId,
+            page: currentPage,
+          });
+        } catch {
+          // If navigation keeps failing even after retries, stop pagination but
+          // return any products that were successfully scraped from previous pages.
+          break;
+        }
       }
 
       // Wait explicitly for the product list selector, in case content is loaded asynchronously
@@ -185,19 +349,9 @@ export async function* scrapeSiteWithPlaywright(
         );
       }
 
-      const productLocator = page.locator(siteConfig.selectors.productList);
-      const productCount = await productLocator.count();
-
-      const pageResults: ScrapedProduct[] = [];
-
-      logger.info(
-        {
-          siteId: siteConfig.siteId,
-          page: currentPage,
-          productCount,
-        },
-        "Found products on page",
-      );
+      const productCountForDerivation = await page
+        .locator(siteConfig.selectors.productList)
+        .count();
 
       // For clownfish-games specifically, attempt to derive the total number of
       // pages from the "X products" text. Once we know how many products exist
@@ -206,7 +360,7 @@ export async function* scrapeSiteWithPlaywright(
       if (
         siteConfig.siteId === "clownfish-games" &&
         derivedTotalPages === null &&
-        productCount > 0
+        productCountForDerivation > 0
       ) {
         try {
           const totalCountLocator = page.locator("#ProductCountDesktop");
@@ -218,14 +372,14 @@ export async function* scrapeSiteWithPlaywright(
               const totalRaw = match[1].replace(/,/g, "");
               const total = Number(totalRaw);
               if (Number.isFinite(total) && total > 0) {
-                const pages = Math.ceil(total / productCount);
+                const pages = Math.ceil(total / productCountForDerivation);
                 if (pages > 0) {
                   derivedTotalPages = pages;
                   logger.info(
                     {
                       siteId: siteConfig.siteId,
                       totalProducts: total,
-                      productsPerPage: productCount,
+                      productsPerPage: productCountForDerivation,
                       derivedTotalPages: pages,
                     },
                     "Derived total pages for site from product count",
@@ -241,138 +395,67 @@ export async function* scrapeSiteWithPlaywright(
       }
 
       if (currentPage >= startPage) {
-        for (let index = 0; index < productCount; index += 1) {
-          const item = productLocator.nth(index);
-
-          const sourceProductId = await item.getAttribute("data-product-id");
-
-          const nameElement = item.locator(siteConfig.selectors.productName);
-          const titleAttr = (await nameElement.getAttribute("title"))?.trim();
-          const nameText =
-            titleAttr || ((await nameElement.textContent()) ?? "");
-          const name = nameText.trim();
-
-          const href = (await nameElement.getAttribute("href")) ?? "";
-          const absoluteUrl =
-            href.startsWith("http://") || href.startsWith("https://")
-              ? href
-              : new URL(href, siteConfig.baseUrl).toString();
-
-          const priceBox = item.locator(siteConfig.selectors.productPrice);
-          const priceAttr = await priceBox.getAttribute("data-now");
-          const priceText = (await priceBox.textContent())?.trim() ?? null;
-          const price = priceAttr ? Number(priceAttr) : parseNumber(priceText);
-
-          let rrp: number | null = null;
-          let rrpText: string | null = null;
-          const rrpBox = item.locator(siteConfig.selectors.productRrp);
-          if (await rrpBox.count()) {
-            const rrpAttr = await rrpBox.getAttribute("data-was");
-            rrpText = (await rrpBox.textContent())?.trim() ?? null;
-            rrp = rrpAttr ? Number(rrpAttr) : parseNumber(rrpText);
-          }
-
-          let availabilityText: string | null = null;
-          const availabilityElement = item.locator(
-            siteConfig.selectors.productAvailability,
-          );
-          if (await availabilityElement.count()) {
-            availabilityText =
-              (await availabilityElement.textContent())?.trim() ?? null;
-          }
-
-          let sku: string | null = null;
-          const skuElement = item
-            .locator(siteConfig.selectors.productSku)
-            .first();
-          if (await skuElement.count()) {
-            sku = (await skuElement.getAttribute("data-sku")) ?? null;
-          }
-
-          let imageUrl: string | null = null;
-
-          const listImageSelector = siteConfig.selectors.productImageList;
-          if (listImageSelector) {
-            const imgElement = item.locator(listImageSelector).first();
-            if (await imgElement.count()) {
-              const srcAttr =
-                (await imgElement.getAttribute("data-src")) ??
-                (await imgElement.getAttribute("src"));
-              if (srcAttr) {
-                imageUrl =
-                  srcAttr.startsWith("http://") ||
-                  srcAttr.startsWith("https://")
-                    ? srcAttr
-                    : new URL(srcAttr, siteConfig.baseUrl).toString();
-              }
-            }
-          }
-
-          if (
-            options?.enableDetailImages &&
-            siteConfig.followProductPageForImage
-          ) {
-            const detailSelector = siteConfig.selectors.productImageDetail;
-            if (detailSelector) {
-              const detailPage = await context.newPage();
-              try {
-                await detailPage.goto(absoluteUrl, {
-                  waitUntil: "domcontentloaded",
-                  timeout: 15000,
-                });
-
-                const detailImg = detailPage.locator(detailSelector).first();
-                if (await detailImg.count()) {
-                  const srcAttr =
-                    (await detailImg.getAttribute("data-src")) ??
-                    (await detailImg.getAttribute("src"));
-                  if (srcAttr) {
-                    const abs =
-                      srcAttr.startsWith("http://") ||
-                      srcAttr.startsWith("https://")
-                        ? srcAttr
-                        : new URL(srcAttr, siteConfig.baseUrl).toString();
-                    imageUrl = abs;
-                  }
-                }
-              } catch (err) {
-                const message =
-                  err instanceof Error
-                    ? err.message
-                    : "Unknown error while scraping detail image";
-                logger.warn(
-                  {
-                    siteId: siteConfig.siteId,
-                    page: currentPage,
-                    url: absoluteUrl,
-                    err: message,
-                  },
-                  "Failed to scrape image from product detail page; using list image if available",
-                );
-              } finally {
-                await detailPage.close();
-              }
-            }
-          }
-
-          pageResults.push({
-            siteId: siteConfig.siteId,
-            sourceProductId,
-            name,
-            url: absoluteUrl,
-            price,
-            priceText,
-            rrp,
-            rrpText,
-            availabilityText,
-            sku,
-            imageUrl,
-          });
-        }
+        const pageResults = await extractProductsFromPage(
+          page,
+          context,
+          siteConfig,
+          logger,
+          currentPage,
+          options?.enableDetailImages,
+        );
 
         if (pageResults.length) {
           yield pageResults;
         }
+      }
+
+      if (isClickPagination) {
+        const nextLocator = page.locator(siteConfig.paginationSelector);
+        if ((await nextLocator.count()) === 0) {
+          logger.info(
+            { siteId: siteConfig.siteId, page: currentPage },
+            "No click-pagination next control found; ending pagination",
+          );
+          break;
+        }
+
+        const firstItem = page.locator(siteConfig.selectors.productList).first();
+        const beforeId = (await firstItem.count())
+          ? await firstItem.getAttribute("data-id")
+          : null;
+
+        await nextLocator.first().click();
+
+        const pollTimeoutMs = 15000;
+        const pollIntervalMs = 300;
+        const deadline = Date.now() + pollTimeoutMs;
+        let refreshed = false;
+
+        while (Date.now() < deadline) {
+          await page.waitForTimeout(pollIntervalMs);
+          const afterItem = page
+            .locator(siteConfig.selectors.productList)
+            .first();
+          const afterId = (await afterItem.count())
+            ? await afterItem.getAttribute("data-id")
+            : null;
+          if (afterId !== beforeId) {
+            refreshed = true;
+            break;
+          }
+        }
+
+        if (!refreshed) {
+          logger.warn(
+            { siteId: siteConfig.siteId, page: currentPage },
+            "Timed out waiting for click-pagination grid to refresh; ending pagination",
+          );
+          break;
+        }
+
+        currentPage += 1;
+        await page.waitForTimeout(siteConfig.rateLimitMs);
+        continue;
       }
 
       // Special-case clownfish-games: if we successfully derived a total page

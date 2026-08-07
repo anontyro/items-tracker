@@ -1,0 +1,23 @@
+{
+  "siteId": "magic-mad-house",
+  "siteName": "Magic Mad House",
+  "baseUrl": "https://magicmadhouse.co.uk",
+  "listPageUrl": "https://magicmadhouse.co.uk/tabletop-games/board-games",
+  "itemType": "board-game",
+  "selectors": {
+    "productList": "[data-block-id=\"ku_landing_result_items\"] li.klevuProduct",
+    "productName": ".kuName a.klevuProductClick",
+    "productPrice": ".kuSalePrice",
+    "productAvailability": ".klevu-stock-status",
+    "productRrp": ".klevu-old-price",
+    "productUrl": ".kuName a.klevuProductClick",
+    "productSku": ".kuAddtocart",
+    "productImageList": "img.kuProdImg",
+    "productImageDetail": "img.kuProdImg"
+  },
+  "rateLimitMs": 3000,
+  "paginationSelector": "a.klevuPaginate:text-is(\">\")",
+  "isActive": true,
+  "followProductPageForImage": false,
+  "paginationMode": "click"
+}

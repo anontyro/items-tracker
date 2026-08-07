@@ -665,6 +665,26 @@ const ItemDetails: React.FC<{
                   );
                 }
 
+                if (site.siteId === "magic-mad-house") {
+                  return (
+                    <Tooltip title="View on Magic Mad House" key={site.siteId}>
+                      <IconButton
+                        component={MuiLink}
+                        href={site.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        sx={{ p: 0.5 }}
+                        aria-label="View on Magic Mad House"
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Magic Mad House
+                        </Typography>
+                      </IconButton>
+                    </Tooltip>
+                  );
+                }
+
                 return (
                   <Tooltip title={`View on ${site.siteName}`} key={site.siteId}>
                     <IconButton
