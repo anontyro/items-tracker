@@ -17,7 +17,9 @@
   },
   "rateLimitMs": 3000,
   "paginationSelector": "a.klevuPaginate:text-is(\">\")",
+  "pageUrlTemplate": "https://magicmadhouse.co.uk/tabletop-games/board-games?Page={page}",
+  "totalCountSelector": ".kuResultsNumber",
   "isActive": true,
   "followProductPageForImage": false,
-  "paginationMode": "click"
+  "paginationMode": "template"
 }

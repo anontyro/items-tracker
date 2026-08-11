@@ -33,7 +33,24 @@ export interface SiteConfig {
   // "click": there is no per-page URL; pagination is an AJAX widget, so
   // `paginationSelector` is clicked and the engine waits for the first
   // product card to change before scraping the next page.
-  paginationMode?: "url" | "click";
+  // "template": there is no usable href/click state to discover pages from,
+  // but every page IS directly addressable via `pageUrlTemplate` — every
+  // page transition (not just resume) is driven by constructing that URL.
+  paginationMode?: "url" | "click" | "template";
+  // Optional URL template with a literal "{page}" placeholder (e.g.
+  // "https://example.com/collection?page={page}"), used to construct a
+  // direct link to page N. For "url"-mode sites this is only used to jump
+  // straight to a resumed startPage before falling back to normal
+  // href-discovery for subsequent pages. For "template"-mode sites it's the
+  // sole per-page navigation mechanism. Page 1 always uses `listPageUrl`
+  // verbatim, never the template (some sites' page-1 URL has no "?page=1"/
+  // "/page/1" suffix at all).
+  pageUrlTemplate?: string;
+  // Optional CSS selector for an element whose text content contains the
+  // total result count (e.g. "6730"), used as a fallback total-page/
+  // total-product estimator (for progress logging) when no numeric page
+  // links can be found in the pagination controls.
+  totalCountSelector?: string;
 }
 
 const SITES_DIR = path.resolve(__dirname, "../../config/sites");
@@ -103,7 +120,17 @@ function validateSiteConfig(raw: any): SiteConfig {
       ? raw.freshContextPerPage
       : false;
   const paginationMode: SiteConfig["paginationMode"] =
-    raw.paginationMode === "click" ? "click" : "url";
+    raw.paginationMode === "click"
+      ? "click"
+      : raw.paginationMode === "template"
+        ? "template"
+        : "url";
+  const pageUrlTemplate =
+    typeof raw.pageUrlTemplate === "string" ? raw.pageUrlTemplate : undefined;
+  const totalCountSelector =
+    typeof raw.totalCountSelector === "string"
+      ? raw.totalCountSelector
+      : undefined;
 
   return {
     siteId,
@@ -118,6 +145,8 @@ function validateSiteConfig(raw: any): SiteConfig {
     followProductPageForImage,
     freshContextPerPage,
     paginationMode,
+    pageUrlTemplate,
+    totalCountSelector,
   };
 }
 

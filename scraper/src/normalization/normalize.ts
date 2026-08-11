@@ -1,4 +1,5 @@
 import { RawScrapedProductRow } from "../storage/sqlite";
+import { ScrapedProduct } from "../scraper/boardGameScraper";
 import { SiteConfig } from "../config/siteConfig";
 
 export interface NormalizedProductIdentity {
@@ -153,4 +154,33 @@ export function normalizeRowsForSite(
         scrapedAt: row.scraped_at,
       };
     });
+}
+
+// Normalizes a single in-memory page of `ScrapedProduct[]` directly,
+// without a round trip through sqlite — used for incremental per-page
+// backend pushes. Delegates to `normalizeRowsForSite` via a thin adapter so
+// filtering/derivation logic is never forked between the per-page path and
+// the (legacy, whole-run) raw-row path.
+export function normalizeScrapedProducts(
+  siteConfig: SiteConfig,
+  products: ScrapedProduct[],
+  scrapedAtIso: string,
+): NormalizedPriceHistoryInput[] {
+  const rows: RawScrapedProductRow[] = products.map((p) => ({
+    id: 0,
+    site_id: p.siteId,
+    source_product_id: p.sourceProductId,
+    name: p.name,
+    url: p.url,
+    price: p.price,
+    price_text: p.priceText,
+    rrp: p.rrp,
+    rrp_text: p.rrpText,
+    availability_text: p.availabilityText,
+    sku: p.sku,
+    raw_json: JSON.stringify(p),
+    scraped_at: scrapedAtIso,
+  }));
+
+  return normalizeRowsForSite(siteConfig, rows);
 }

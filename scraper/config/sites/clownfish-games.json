@@ -17,6 +17,7 @@
   },
   "rateLimitMs": 2000,
   "paginationSelector": "nav.pagination a",
+  "pageUrlTemplate": "https://clownfish-games.co.uk/collections/all?page={page}",
   "isActive": true,
   "followProductPageForImage": false
 }

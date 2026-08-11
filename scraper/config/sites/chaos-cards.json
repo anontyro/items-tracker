@@ -17,6 +17,7 @@
   },
   "rateLimitMs": 10000,
   "paginationSelector": "nav.pagi a",
+  "pageUrlTemplate": "https://www.chaoscards.co.uk/shop/board-games/all-board-games/sort/release-date-newest-first/show/64-products/page/{page}",
   "isActive": true,
   "followProductPageForImage": false,
   "freshContextPerPage": true

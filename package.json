@@ -7,6 +7,7 @@
     "dev:scraper": "pnpm --filter board-game-price-tracker-scraper dev",
     "build:scraper": "pnpm --filter board-game-price-tracker-scraper build",
     "start:scraper": "pnpm --filter board-game-price-tracker-scraper start",
+    "prune-raw-data:scraper": "pnpm --filter board-game-price-tracker-scraper prune-raw-data",
     "dev:backend": "pnpm --filter board-game-price-tracker-backend start:dev",
     "dev:frontend": "pnpm --filter board-game-price-tracker-frontend dev",
     "dev:desktop": "pnpm --filter board-game-price-tracker-desktop electron:dev",

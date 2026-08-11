@@ -16,6 +16,11 @@ export interface ScraperConfig {
   sqlitePath: string;
   enableDetailImages: boolean;
   serviceMode: boolean;
+  progressLogEveryProducts: number; // log a progress summary every N products scraped
+  resumeStalenessWindowMs: number; // how old an incomplete run can be and still be resumed
+  forceRestart: boolean; // ignore any resumable run and start fresh
+  rawRetentionDays: number; // scraped_products_raw: drop rows older than this
+  rawMaxBytes: number; // scraped_products_raw: hard cap safety valve on top of the retention window
 }
 
 function requireEnv(name: string, defaultValue?: string): string {
@@ -58,4 +63,17 @@ export const config: ScraperConfig = {
   serviceMode:
     process.env.SCRAPER_SERVICE_MODE === "1" ||
     process.env.SCRAPER_SERVICE_MODE === "true",
+  progressLogEveryProducts:
+    optionalPositiveIntEnv("SCRAPER_PROGRESS_LOG_EVERY") ?? 1000,
+  resumeStalenessWindowMs:
+    (optionalPositiveIntEnv("SCRAPER_RESUME_STALENESS_HOURS") ?? 24) *
+    60 *
+    60 *
+    1000,
+  forceRestart:
+    process.env.SCRAPER_FORCE_RESTART === "1" ||
+    process.env.SCRAPER_FORCE_RESTART === "true",
+  rawRetentionDays: optionalPositiveIntEnv("SCRAPER_RAW_RETENTION_DAYS") ?? 30,
+  rawMaxBytes:
+    optionalPositiveIntEnv("SCRAPER_RAW_MAX_BYTES") ?? 1_073_741_824, // 1GB
 };

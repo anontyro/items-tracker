@@ -5,7 +5,7 @@
   "listPageUrl": "https://zatu.com/collections/top-5000-board-games?page=1",
   "itemType": "board-game",
   "selectors": {
-    "productList": ".product-card",
+    "productList": "#ProductsList .product-card",
     "productName": ".product-card__title a",
     "productPrice": ".f-price-item--sale",
     "productAvailability": ".product__inventory-text",
@@ -17,6 +17,7 @@
   },
   "rateLimitMs": 2000,
   "paginationSelector": ".pagination a.pagination__item",
+  "pageUrlTemplate": "https://zatu.com/collections/top-5000-board-games?page={page}",
   "isActive": true,
   "followProductPageForImage": true
 }
